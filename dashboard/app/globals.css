@@ -4,74 +4,71 @@
 
 @layer base {
   :root {
-    /* Pro Financial Terminal Theme (Dark by default) */
-    --background: 228 26% 4%;        /* #090A0F Void Obsidian */
-    --foreground: 215 20% 92%;        /* High contrast light text */
+    /* AETER Monitor Obsidian Glass Archetype */
+    --background: 228 22% 6%;         /* #0d0f14 Canvas Substrate */
+    --foreground: 220 20% 97%;        /* #f4f5f8 Pure Ink */
 
-    --card: 223 28% 8%;              /* #0F121A Card Deep Slate */
-    --card-foreground: 215 20% 95%;
+    --card: 223 20% 11%;             /* rgba(22, 25, 33, 0.72) */
+    --card-foreground: 220 20% 97%;
 
-    --popover: 223 28% 8%;           /* #0F121A */
-    --popover-foreground: 215 20% 95%;
+    --popover: 223 20% 11%;
+    --popover-foreground: 220 20% 97%;
 
-    --primary: 160 84% 39%;          /* #10B981 Terminal Emerald */
-    --primary-foreground: 228 26% 4%;
+    --primary: 160 84% 39%;          /* #10b981 Emerald */
+    --primary-foreground: 228 22% 6%;
 
-    --secondary: 221 27% 12%;        /* #161B26 Elevated Card */
-    --secondary-foreground: 215 20% 90%;
+    --secondary: 221 20% 15%;        /* #1f2430 */
+    --secondary-foreground: 220 20% 95%;
 
-    --muted: 221 27% 12%;            /* #161B26 */
-    --muted-foreground: 215 16% 60%;  /* #8899A6 */
+    --muted: 221 20% 15%;
+    --muted-foreground: 218 11% 65%; /* #9ca3af */
 
-    --accent: 160 84% 39%;           /* #10B981 */
-    --accent-foreground: 228 26% 4%;
+    --accent: 160 84% 39%;
+    --accent-foreground: 228 22% 6%;
 
-    --destructive: 0 84% 60%;        /* #EF4444 Crimson Loss */
+    --destructive: 348 89% 60%;      /* #f43f5e Rose */
     --destructive-foreground: 210 40% 98%;
 
-    --border: 221 30% 17%;           /* #1E2638 Subtle Hairline */
-    --input: 221 30% 17%;            /* #1E2638 */
+    --border: 221 20% 20%;
+    --input: 221 20% 20%;
     --ring: 160 84% 39%;
 
-    --radius: 0.25rem;
+    --radius: 1rem;
 
-    /* Terminal Palette Tokens */
-    --terminal-void: #090A0F;
-    --terminal-card: #0F121A;
-    --terminal-elevated: #161B26;
-    --terminal-border: #1E2638;
-    --terminal-border-hover: #2E3A54;
-    --terminal-profit: #10B981;
-    --terminal-loss: #EF4444;
-    --terminal-cyan: #06B6D4;
-    --terminal-amber: #F59E0B;
-
-    --sidebar-background: 228 26% 4%;
-    --sidebar-foreground: 215 20% 90%;
-    --sidebar-border: 221 30% 17%;
-    --sidebar-accent: 221 27% 12%;
-    --sidebar-accent-foreground: 215 20% 98%;
+    /* Archetype color tokens */
+    --aeter-canvas: #0d0f14;
+    --aeter-glass: rgba(22, 25, 33, 0.72);
+    --aeter-glass-strong: rgba(26, 30, 41, 0.85);
+    --aeter-border: rgba(255, 255, 255, 0.08);
+    --aeter-border-hover: rgba(255, 255, 255, 0.16);
+    --aeter-ink: #f4f5f8;
+    --aeter-ink-soft: #9ca3af;
+    --aeter-ink-mute: #6b7280;
+    --aeter-emerald: #10b981;
+    --aeter-rose: #f43f5e;
+    --aeter-blue: #3b82f6;
+    --aeter-amber: #f59e0b;
   }
 
   .dark {
-    --background: 228 26% 4%;
-    --foreground: 215 20% 92%;
-    --card: 223 28% 8%;
-    --card-foreground: 215 20% 95%;
-    --popover: 223 28% 8%;
-    --popover-foreground: 215 20% 95%;
+    --background: 228 22% 6%;
+    --foreground: 220 20% 97%;
+    --card: 223 20% 11%;
+    --card-foreground: 220 20% 97%;
+    --popover: 223 20% 11%;
+    --popover-foreground: 220 20% 97%;
     --primary: 160 84% 39%;
-    --primary-foreground: 228 26% 4%;
-    --secondary: 221 27% 12%;
-    --secondary-foreground: 215 20% 90%;
-    --muted: 221 27% 12%;
-    --muted-foreground: 215 16% 60%;
+    --primary-foreground: 228 22% 6%;
+    --secondary: 221 20% 15%;
+    --secondary-foreground: 220 20% 95%;
+    --muted: 221 20% 15%;
+    --muted-foreground: 218 11% 65%;
     --accent: 160 84% 39%;
-    --accent-foreground: 228 26% 4%;
-    --destructive: 0 84% 60%;
+    --accent-foreground: 228 22% 6%;
+    --destructive: 348 89% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 221 30% 17%;
-    --input: 221 30% 17%;
+    --border: 221 20% 20%;
+    --input: 221 20% 20%;
     --ring: 160 84% 39%;
   }
 }
@@ -79,131 +76,96 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+    background-color: #0d0f14;
+    background-image:
+      radial-gradient(1100px 650px at 15% 10%, rgba(59, 130, 246, 0.08), transparent 60%),
+      radial-gradient(900px 600px at 85% 15%, rgba(16, 185, 129, 0.07), transparent 55%),
+      radial-gradient(1000px 750px at 50% 90%, rgba(30, 41, 59, 0.25), transparent 65%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
-/* Tabular numbers for financial metrics */
+/* Numeric precision utility */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
-/* Hairline border utility */
-.border-hairline {
-  border-width: 1px;
-  border-color: #1E2638;
+/* AETER Frosted Glass Panels */
+.glass-panel {
+  background: rgba(22, 25, 33, 0.72);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.border-hairline-b {
-  border-bottom-width: 1px;
-  border-bottom-color: #1E2638;
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
-.border-hairline-t {
-  border-top-width: 1px;
-  border-top-color: #1E2638;
+.glass-panel-strong {
+  background: rgba(26, 30, 41, 0.85);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.border-hairline-r {
-  border-right-width: 1px;
-  border-right-color: #1E2638;
-}
-
-.border-hairline-l {
-  border-left-width: 1px;
-  border-left-color: #1E2638;
-}
-
-/* Stock Ticker Animation */
-.ticker-wrap {
-  width: 100%;
-  overflow: hidden;
-  height: 2rem;
-  padding: 0.25rem 0;
+/* Breadcrumb Strip Header */
+.breadcrumb-strip {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1.125rem;
+  background: rgba(22, 25, 33, 0.82);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.4);
 }
 
-.ticker {
-  display: inline-flex;
-  white-space: nowrap;
-  animation: ticker 35s linear infinite;
-}
-
-.ticker:hover {
-  animation-play-state: paused;
-}
-
-.ticker-item {
-  display: flex;
-  align-items: center;
-  padding: 0 0.85rem;
-}
-
-@keyframes ticker {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-/* Pro Terminal Grid lines and subtle hover effects */
-.terminal-card {
-  background-color: #0F121A;
-  border: 1px solid #1E2638;
-  border-radius: 0.25rem;
-  transition: border-color 0.15s ease;
-}
-
-.terminal-card:hover {
-  border-color: #2E3A54;
-}
-
-.terminal-elevated {
-  background-color: #161B26;
-  border: 1px solid #1E2638;
-}
-
-/* Micro Status Indicator Dot */
-.status-dot-pulse {
-  position: relative;
-}
-.status-dot-pulse::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 9999px;
-  background-color: inherit;
-  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
-@keyframes ping {
-  75%, 100% {
-    transform: scale(2);
-    opacity: 0;
-  }
-}
-
-/* Scrollbar styles for dense data terminals */
-::-webkit-scrollbar {
+/* Calm Emerald Pip */
+.emerald-pip {
   width: 5px;
   height: 5px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+  flex-shrink: 0;
+}
+
+/* Custom Sleek Glass Scrollbar (AETER 6px) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #090A0F;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E2638;
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2E3A54;
+  background: rgba(255, 255, 255, 0.24);
 }
