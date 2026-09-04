@@ -2,14 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Search, ArrowLeft, Terminal } from "lucide-react"
+import { Search, ArrowLeft, Newspaper, Tag, Calendar } from "lucide-react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-
-const newsArticles = [
+export const newsArticles = [
   {
     id: "1",
     title: "Bank Indonesia Pertahankan Suku Bunga Acuan di Level 5,75%",
@@ -20,6 +15,11 @@ const newsArticles = [
     tags: ["BBRI", "BBCA", "BMRI"],
     snippet:
       "Bank Indonesia (BI) memutuskan untuk mempertahankan suku bunga acuan atau BI Rate di level 5,75% dalam Rapat Dewan Gubernur (RDG) bulanan. Keputusan ini sejalan dengan upaya menjaga stabilitas nilai tukar rupiah dan mengendalikan inflasi.",
+    content: `JAKARTA - Bank Indonesia (BI) memutuskan untuk mempertahankan suku bunga acuan atau BI Rate di level 5,75% dalam Rapat Dewan Gubernur (RDG) bulanan yang digelar pada 10-11 Mei 2025. Keputusan ini sejalan dengan upaya menjaga stabilitas nilai tukar rupiah dan mengendalikan inflasi.
+
+Gubernur BI, Perry Warjiyo, mengatakan keputusan tersebut konsisten dengan kebijakan moneter yang pre-emptive dan forward looking untuk memastikan inflasi tetap terkendali dalam sasaran 3,0±1% pada 2025 dan 2026.
+
+Keputusan BI untuk mempertahankan suku bunga acuan diprediksi akan berdampak positif bagi saham-saham perbankan seperti BBRI, BBCA, dan BMRI.`
   },
   {
     id: "2",
@@ -31,17 +31,19 @@ const newsArticles = [
     tags: ["TLKM"],
     snippet:
       "PT Telkom Indonesia Tbk (TLKM) resmi meluncurkan layanan 5G di 10 kota besar di Indonesia. Langkah ini merupakan bagian dari strategi perseroan untuk memperkuat posisinya di industri telekomunikasi dan digital.",
+    content: `JAKARTA - PT Telkom Indonesia Tbk (TLKM) resmi meluncurkan layanan 5G di 10 kota besar di Indonesia pada Rabu (10/5/2025). Kota-kota tersebut meliputi Jakarta, Surabaya, Bandung, Medan, Makassar, Denpasar, Semarang, Yogyakarta, Palembang, dan Balikpapan.`
   },
   {
     id: "3",
-    title: "Astra International Catat Pertumbuhan Laba 15% di Kuartal II-2023",
+    title: "Astra International Catat Pertumbuhan Laba 15% di Kuartal II",
     source: "Bisnis.com",
     author: "Budi Santoso",
     time: "6 jam yang lalu",
     date: "11 Mei 2025",
     tags: ["ASII"],
     snippet:
-      "PT Astra International Tbk (ASII) mencatatkan pertumbuhan laba bersih sebesar 15% secara year-on-year (yoy) pada kuartal II-2023. Kinerja positif ini didorong oleh kontribusi dari segmen otomotif dan jasa keuangan.",
+      "PT Astra International Tbk (ASII) mencatatkan pertumbuhan laba bersih sebesar 15% secara year-on-year (yoy) pada kuartal II. Kinerja positif ini didorong oleh kontribusi dari segmen otomotif dan jasa keuangan.",
+    content: `JAKARTA - PT Astra International Tbk (ASII) mencatatkan pertumbuhan laba bersih sebesar 15% secara year-on-year (yoy) pada kuartal II. Berdasarkan laporan keuangan resmi, perseroan membukukan laba bersih sebesar Rp8,2 triliun, naik dari Rp7,1 triliun pada periode yang sama tahun lalu.`
   },
   {
     id: "4",
@@ -52,171 +54,159 @@ const newsArticles = [
     date: "11 Mei 2025",
     tags: ["BBRI", "AGRO"],
     snippet:
-      "Saham PT Bank Rakyat Indonesia Agroniaga Tbk (AGRO) melesat setelah pengumuman rencana merger dengan induk usahanya, PT Bank Rakyat Indonesia Tbk (BBRI). Langkah ini merupakan bagian dari strategi konsolidasi perbankan BUMN.",
-  },
-  {
-    id: "5",
-    title: "Unilever Indonesia Fokus Ekspansi Produk Ramah Lingkungan",
-    source: "Kompas",
-    author: "Anita Wijaya",
-    time: "10 jam yang lalu",
-    date: "11 Mei 2025",
-    tags: ["UNVR"],
-    snippet:
-      "PT Unilever Indonesia Tbk (UNVR) mengumumkan fokus strategis pada pengembangan dan ekspansi produk ramah lingkungan. Perseroan menargetkan 50% dari portofolio produknya menggunakan bahan yang dapat didaur ulang pada tahun 2025.",
-  },
-  {
-    id: "6",
-    title: "Indeks Harga Saham Gabungan Ditutup Menguat 0,8%",
-    source: "Antara News",
-    author: "Fajar Nugroho",
-    time: "12 jam yang lalu",
-    date: "11 Mei 2025",
-    tags: ["IHSG", "COMPOSITE"],
-    snippet:
-      "Indeks Harga Saham Gabungan (IHSG) ditutup menguat 0,8% ke level 7.250 pada perdagangan Kamis (11/5/2025). Penguatan ini didorong oleh aksi beli investor asing di saham-saham perbankan dan telekomunikasi.",
-  },
-  {
-    id: "7",
-    title: "Bank Mandiri Targetkan Pertumbuhan Kredit 10-12% Tahun Ini",
-    source: "Detik Finance",
-    author: "Rini Kusuma",
-    time: "14 jam yang lalu",
-    date: "11 Mei 2025",
-    tags: ["BMRI"],
-    snippet:
-      "PT Bank Mandiri Tbk (BMRI) menargetkan pertumbuhan kredit sebesar 10-12% pada tahun 2025. Target ini didukung oleh pemulihan ekonomi dan ekspansi di segmen korporasi dan UMKM.",
-  },
-  {
-    id: "8",
-    title: "Pertamina Energi Geothermal Siap Melantai di Bursa",
-    source: "Tempo",
-    author: "Arif Wicaksono",
-    time: "16 jam yang lalu",
-    date: "11 Mei 2025",
-    tags: ["PEGS"],
-    snippet:
-      "PT Pertamina Energi Geothermal (PEGS) siap melantai di Bursa Efek Indonesia (BEI) pada Juni 2025. Perusahaan menargetkan dana IPO sebesar Rp8 triliun untuk ekspansi kapasitas pembangkit listrik panas bumi.",
+      "Saham PT Bank Rakyat Indonesia Agroniaga Tbk (AGRO) melesat setelah pengumuman rencana merger dengan induk usahanya, PT Bank Rakyat Indonesia Tbk (BBRI).",
+    content: `Saham PT Bank Rakyat Indonesia Agroniaga Tbk (AGRO) melesat setelah pengumuman rencana merger dengan induk usahanya, PT Bank Rakyat Indonesia Tbk (BBRI). Langkah ini merupakan bagian dari strategi konsolidasi perbankan BUMN.`
   },
 ]
 
-export default function NewsListingPage() {
+export default function NewsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [activeArticleId, setActiveArticleId] = useState<string | null>(null)
 
-  const allTags = Array.from(new Set(newsArticles.flatMap((article) => article.tags))).sort()
+  const allTags = Array.from(new Set(newsArticles.flatMap((a) => a.tags))).sort()
 
   const filteredArticles = newsArticles.filter((article) => {
     const matchesSearch =
       article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       article.snippet.toLowerCase().includes(searchTerm.toLowerCase())
-
     const matchesTag = selectedTag ? article.tags.includes(selectedTag) : true
-
     return matchesSearch && matchesTag
   })
 
+  const selectedArticle = newsArticles.find((a) => a.id === activeArticleId)
+
   return (
-    <div className="min-h-screen bg-[#090A0F] text-[#E2E8F0] p-4 md:p-6 font-mono">
+    <div className="min-h-screen bg-[#0d0f14] text-[#f4f5f8] p-4 lg:p-6 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between border-b border-[#1E2638] pb-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-[#10B981] hover:text-white transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            RETURN TO IDX TERMINAL
-          </Link>
-          <div className="flex items-center gap-2 text-xs text-[#64748B]">
-            <Terminal className="h-3.5 w-3.5 text-[#10B981]" />
-            <span>WIRE SERVICE FEED</span>
+        {/* Header Breadcrumb */}
+        <div className="breadcrumb-strip">
+          <div className="flex items-center gap-2.5 text-xs">
+            <Link href="/" className="inline-flex items-center gap-1 text-[#10b981] hover:underline font-bold">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>MARKET TERMINAL</span>
+            </Link>
+            <span className="text-white/20">/</span>
+            <span className="text-[#f4f5f8] font-semibold">Financial Wire</span>
+            <span className="text-white/20 hidden sm:inline">·</span>
+            <span className="text-[#9ca3af] hidden sm:inline">IDX Disclosures</span>
+          </div>
+          <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono">
+            <span className="emerald-pip" />
+            <span className="text-[#9ca3af]">DISPATCH ARCHIVE</span>
           </div>
         </div>
 
-        <div>
-          <h1 className="text-xl font-bold tracking-wider text-white">IDX FINANCIAL WIRE ARCHIVE</h1>
-          <p className="text-xs text-[#64748B] mt-1">Real-time market intelligence and corporate disclosures</p>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#64748B]" />
-            <Input
-              placeholder="Filter headlines, issuers, keywords..."
-              className="pl-9 h-8 text-xs font-mono bg-[#0F121A] border-[#1E2638] text-white focus:border-[#10B981]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-wrap gap-1.5 items-center">
+        {selectedArticle ? (
+          <div className="glass-panel p-6 space-y-4">
             <button
-              type="button"
-              onClick={() => setSelectedTag(null)}
-              className={`px-2.5 py-1 text-xs rounded border transition-colors ${
-                selectedTag === null
-                  ? "bg-[#10B981] text-[#090A0F] font-bold border-[#10B981]"
-                  : "bg-[#0F121A] text-[#64748B] border-[#1E2638] hover:text-white"
-              }`}
+              onClick={() => setActiveArticleId(null)}
+              className="inline-flex items-center gap-1.5 text-xs font-mono text-[#10b981] hover:text-white"
             >
-              ALL
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to all articles
             </button>
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                className={`px-2 py-1 text-xs rounded border transition-colors ${
-                  selectedTag === tag
-                    ? "bg-[#10B981] text-[#090A0F] font-bold border-[#10B981]"
-                    : "bg-[#0F121A] text-[#64748B] border-[#1E2638] hover:text-white"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {filteredArticles.map((article) => (
-            <div
-              key={article.id}
-              className="bg-[#0F121A] border border-[#1E2638] hover:border-[#2E3A54] rounded p-4 flex flex-col justify-between transition-colors"
-            >
-              <div>
-                <div className="flex items-center justify-between text-[11px] text-[#64748B] mb-2">
-                  <span className="text-[#10B981] font-semibold">{article.source}</span>
-                  <span>{article.time}</span>
-                </div>
-                <Link href={`/berita/${article.id}`}>
-                  <h3 className="font-sans font-semibold text-sm text-white hover:text-[#10B981] transition-colors leading-snug">
-                    {article.title}
-                  </h3>
-                </Link>
-                <p className="text-xs font-sans text-[#94A3B8] mt-2 line-clamp-3 leading-relaxed">
-                  {article.snippet}
-                </p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs font-mono text-[#9ca3af]">
+                <span className="text-[#10b981] font-bold">{selectedArticle.source}</span>
+                <span>·</span>
+                <span>{selectedArticle.date}</span>
+                <span>·</span>
+                <span>Oleh {selectedArticle.author}</span>
               </div>
-
-              <div className="flex flex-wrap gap-1 mt-4 pt-3 border-t border-[#1E2638]">
-                {article.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-[10px] bg-[#161B26] text-[#94A3B8] border border-[#1E2638] px-1.5 py-0.5 rounded"
-                  >
-                    {tag}
+              <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight leading-tight">
+                {selectedArticle.title}
+              </h1>
+              <div className="flex gap-1.5 pt-1">
+                {selectedArticle.tags.map((t) => (
+                  <span key={t} className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-xs font-mono text-[#9ca3af]">
+                    {t}
                   </span>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-
-        {filteredArticles.length === 0 && (
-          <div className="text-center py-12 border border-dashed border-[#1E2638] rounded">
-            <h3 className="text-xs font-mono text-[#94A3B8]">NO DISPATCHES FOUND</h3>
-            <p className="text-xs text-[#64748B] mt-1">Adjust query or symbol filter parameters</p>
+            <div className="pt-4 border-t border-white/8 text-sm text-[#cbd5e1] leading-relaxed whitespace-pre-line">
+              {selectedArticle.content}
+            </div>
           </div>
+        ) : (
+          <>
+            {/* Search and Filters */}
+            <div className="glass-panel p-3 flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#6b7280]" />
+                <input
+                  type="text"
+                  placeholder="Filter headlines, symbols, issuers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-8 w-full pl-8 pr-3 text-xs bg-white/5 border border-white/10 rounded-lg text-white placeholder-[#6b7280] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 items-center w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTag(null)}
+                  className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
+                    selectedTag === null
+                      ? "bg-white/15 text-white font-bold border border-white/20"
+                      : "bg-white/5 text-[#9ca3af] hover:text-white"
+                  }`}
+                >
+                  ALL
+                </button>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                    className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
+                      selectedTag === tag
+                        ? "bg-[#10b981]/20 text-[#10b981] font-bold border border-[#10b981]/30"
+                        : "bg-white/5 text-[#9ca3af] hover:text-white"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Articles Grid */}
+            <div className="grid gap-3.5 md:grid-cols-2 lg:grid-cols-3">
+              {filteredArticles.map((article) => (
+                <div
+                  key={article.id}
+                  onClick={() => setActiveArticleId(article.id)}
+                  className="glass-panel p-4 flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] font-mono text-[#9ca3af] mb-2">
+                      <span className="text-[#10b981] font-semibold">{article.source}</span>
+                      <span>{article.time}</span>
+                    </div>
+                    <h3 className="font-semibold text-sm text-white group-hover:text-[#10b981] transition-colors leading-snug">
+                      {article.title}
+                    </h3>
+                    <p className="text-xs text-[#9ca3af] mt-2 line-clamp-3 leading-relaxed">
+                      {article.snippet}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mt-4 pt-3 border-t border-white/8">
+                    {article.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] font-mono bg-white/5 text-[#9ca3af] border border-white/10 px-1.5 py-0.5 rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>
