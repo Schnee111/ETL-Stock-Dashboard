@@ -7,11 +7,15 @@ import {
   Search,
   RefreshCw,
   TrendingUp,
-  TrendingDown,
   BarChart3,
   Layers,
   FileText,
   PieChart,
+  Menu,
+  X,
+  SlidersHorizontal,
+  ChevronRight,
+  ExternalLink,
 } from "lucide-react"
 
 import StockChart from "@/components/stock-chart"
@@ -231,6 +235,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [activeTab, setActiveTab] = useState<string>("terminal")
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false)
 
   const loadData = async (ticker: string, per: string) => {
     setIsLoading(true)
@@ -278,6 +283,15 @@ export default function Home() {
         <header className="breadcrumb-strip flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex items-center justify-between w-full sm:w-auto">
             <div className="flex items-center gap-2 text-xs font-sans">
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-white sm:hidden border border-white/10"
+                aria-label="Toggle navigation menu"
+              >
+                {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </button>
+
               <span className="font-bold tracking-tight text-white text-sm sm:text-xs">IDX</span>
               <span className="text-white/25">/</span>
               <span className="text-white font-semibold">Market Intelligence</span>
@@ -285,12 +299,20 @@ export default function Home() {
               <span className="text-[#9ca3af] hidden md:inline text-[11.5px]">Equity Terminal</span>
             </div>
 
-            <div className="flex sm:hidden items-center gap-2">
+            <div className="flex items-center gap-2">
               <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10.5px]">
                 <span className="emerald-pip" />
                 <span className="text-white font-medium">Live</span>
               </div>
               <LiveClock />
+              <button
+                type="button"
+                onClick={handleRefresh}
+                className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-[#9ca3af] hover:text-white border border-white/10 transition-colors sm:hidden"
+                title="Refresh"
+              >
+                <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
             </div>
           </div>
 
@@ -310,6 +332,57 @@ export default function Home() {
             </button>
           </div>
         </header>
+
+        {/* Mobile Slide-down Navigation Drawer */}
+        {isMobileMenuOpen && (
+          <div className="sm:hidden mt-2 p-3 glass-panel-strong space-y-3 animate-fade-slide-in">
+            <div className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wider px-1">
+              Terminal Navigation
+            </div>
+            <div className="grid grid-cols-1 gap-1">
+              {[
+                { id: "terminal", label: "Market Overview", icon: BarChart3, desc: "Stock price quotes & volume" },
+                { id: "stocks", label: "Broad Market", icon: Layers, desc: "Sector indices & commodities" },
+                { id: "correlation", label: "Comparison", icon: PieChart, desc: "Multi-symbol correlation" },
+                { id: "portfolio", label: "Portfolio Analytics", icon: TrendingUp, desc: "Asset allocation & performance" },
+                { id: "news", label: "Corporate Disclosures", icon: FileText, desc: "IDX financial wire & news" },
+              ].map((item) => {
+                const Icon = item.icon
+                const isActive = activeTab === item.id
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id)
+                      setIsMobileMenuOpen(false)
+                    }}
+                    className={`flex items-center justify-between p-2 rounded-xl text-left transition-all ${
+                      isActive
+                        ? "bg-white/15 text-white border border-white/20 shadow-sm"
+                        : "text-[#9ca3af] hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-1.5 rounded-lg ${isActive ? "bg-[#10b981]/20 text-[#10b981]" : "bg-white/5 text-[#9ca3af]"}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white">{item.label}</div>
+                        <div className="text-[10px] text-[#9ca3af]">{item.desc}</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-[#6b7280]" />
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="pt-2 border-t border-white/8 flex items-center justify-between text-[11px] text-[#9ca3af]">
+              <span>Exchange: IDX Jakarta</span>
+              <span className="text-[#10b981] font-mono font-medium">Session Open</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Mobile Ticker Scroller & Tab Bar */}
