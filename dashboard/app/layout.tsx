@@ -4,9 +4,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Paham Saham - Dashboard",
-  description: "Pantau pergerakan saham Indonesia",
-  generator: "v0.dev",
+  title: "IDX Terminal | Financial Market Intelligence",
+  description: "High-density institutional stock & market terminal for Indonesia Stock Exchange (IDX)",
 }
 
 export default function RootLayout({
@@ -15,9 +14,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+    <html lang="en" className="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
+      <body className="min-h-screen bg-[#090A0F] text-[#E2E8F0] font-sans antialiased selection:bg-[#10B981]/30 selection:text-white">
+        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false}>
           {children}
         </ThemeProvider>
       </body>

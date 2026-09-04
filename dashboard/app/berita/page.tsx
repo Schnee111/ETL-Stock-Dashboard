@@ -2,14 +2,13 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Search, ArrowLeft } from "lucide-react"
+import { Search, ArrowLeft, Terminal } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
-// Mock data for news articles
 const newsArticles = [
   {
     id: "1",
@@ -105,10 +104,8 @@ export default function NewsListingPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
 
-  // Get all unique tags
   const allTags = Array.from(new Set(newsArticles.flatMap((article) => article.tags))).sort()
 
-  // Filter articles based on search term and selected tag
   const filteredArticles = newsArticles.filter((article) => {
     const matchesSearch =
       article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -120,85 +117,108 @@ export default function NewsListingPage() {
   })
 
   return (
-    <div className="container mx-auto p-4 md:p-6">
-      <div className="mb-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Dashboard
+    <div className="min-h-screen bg-[#090A0F] text-[#E2E8F0] p-4 md:p-6 font-mono">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between border-b border-[#1E2638] pb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs text-[#10B981] hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            RETURN TO IDX TERMINAL
           </Link>
-        </Button>
-      </div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Berita Pasar Saham</h1>
-        <p className="text-muted-foreground">Berita dan analisis terbaru dari pasar saham Indonesia</p>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari berita..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div className="flex items-center gap-2 text-xs text-[#64748B]">
+            <Terminal className="h-3.5 w-3.5 text-[#10B981]" />
+            <span>WIRE SERVICE FEED</span>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant={selectedTag === null ? "default" : "outline"} size="sm" onClick={() => setSelectedTag(null)}>
-            Semua
-          </Button>
-          {allTags.map((tag) => (
-            <Button
-              key={tag}
-              variant={selectedTag === tag ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+
+        <div>
+          <h1 className="text-xl font-bold tracking-wider text-white">IDX FINANCIAL WIRE ARCHIVE</h1>
+          <p className="text-xs text-[#64748B] mt-1">Real-time market intelligence and corporate disclosures</p>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#64748B]" />
+            <Input
+              placeholder="Filter headlines, issuers, keywords..."
+              className="pl-9 h-8 text-xs font-mono bg-[#0F121A] border-[#1E2638] text-white focus:border-[#10B981]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <button
+              type="button"
+              onClick={() => setSelectedTag(null)}
+              className={`px-2.5 py-1 text-xs rounded border transition-colors ${
+                selectedTag === null
+                  ? "bg-[#10B981] text-[#090A0F] font-bold border-[#10B981]"
+                  : "bg-[#0F121A] text-[#64748B] border-[#1E2638] hover:text-white"
+              }`}
             >
-              {tag}
-            </Button>
-          ))}
+              ALL
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                  selectedTag === tag
+                    ? "bg-[#10B981] text-[#090A0F] font-bold border-[#10B981]"
+                    : "bg-[#0F121A] text-[#64748B] border-[#1E2638] hover:text-white"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredArticles.map((article) => (
-          <Card key={article.id} className="overflow-hidden h-full flex flex-col">
-            <CardHeader className="p-4">
-              <CardTitle className="text-lg">
-                <Link href={`/berita/${article.id}`} className="hover:text-primary transition-colors">
-                  {article.title}
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {filteredArticles.map((article) => (
+            <div
+              key={article.id}
+              className="bg-[#0F121A] border border-[#1E2638] hover:border-[#2E3A54] rounded p-4 flex flex-col justify-between transition-colors"
+            >
+              <div>
+                <div className="flex items-center justify-between text-[11px] text-[#64748B] mb-2">
+                  <span className="text-[#10B981] font-semibold">{article.source}</span>
+                  <span>{article.time}</span>
+                </div>
+                <Link href={`/berita/${article.id}`}>
+                  <h3 className="font-sans font-semibold text-sm text-white hover:text-[#10B981] transition-colors leading-snug">
+                    {article.title}
+                  </h3>
                 </Link>
-              </CardTitle>
-              <CardDescription className="flex items-center justify-between">
-                <span>{article.source}</span>
-                <span>{article.time}</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 flex-1 flex flex-col">
-              <p className="text-sm text-muted-foreground mb-4 flex-1">{article.snippet}</p>
-              <div className="flex flex-wrap gap-1 mt-auto">
+                <p className="text-xs font-sans text-[#94A3B8] mt-2 line-clamp-3 leading-relaxed">
+                  {article.snippet}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-1 mt-4 pt-3 border-t border-[#1E2638]">
                 {article.tags.map((tag) => (
-                  <Badge
+                  <span
                     key={tag}
-                    variant="outline"
-                    className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border-primary/30 hover:bg-primary/20"
+                    className="text-[10px] bg-[#161B26] text-[#94A3B8] border border-[#1E2638] px-1.5 py-0.5 rounded"
                   >
                     {tag}
-                  </Badge>
+                  </span>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredArticles.length === 0 && (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium mb-2">Tidak ada berita yang ditemukan</h3>
-          <p className="text-muted-foreground">Coba ubah kata kunci pencarian atau filter yang Anda gunakan</p>
+            </div>
+          ))}
         </div>
-      )}
+
+        {filteredArticles.length === 0 && (
+          <div className="text-center py-12 border border-dashed border-[#1E2638] rounded">
+            <h3 className="text-xs font-mono text-[#94A3B8]">NO DISPATCHES FOUND</h3>
+            <p className="text-xs text-[#64748B] mt-1">Adjust query or symbol filter parameters</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

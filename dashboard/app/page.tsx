@@ -4,37 +4,19 @@ import { useState, useEffect } from "react"
 import {
   ArrowDown,
   ArrowUp,
-  Bell,
-  ChevronDown,
+  Activity,
+  Terminal,
   Clock,
-  Menu,
-  Plus,
+  RefreshCw,
   Search,
-  Settings,
-  Star,
-  TrendingUp,
+  SlidersHorizontal,
+  ChevronRight,
+  Wifi,
   BarChart3,
-  Newspaper,
-  Briefcase,
-  Globe,
-  LineChart,
+  Layers,
+  Database,
+  ExternalLink,
 } from "lucide-react"
-import Link from "next/link"
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Separator } from "@/components/ui/separator"
 
 import StockChart from "@/components/stock-chart"
 import MarketOverview from "@/components/market-overview"
@@ -42,11 +24,10 @@ import StockNews from "@/components/stock-news"
 import StockTicker from "@/components/stock-ticker"
 import StockComparison from "@/components/stock-comparison"
 import PortfolioAnalytics from "@/components/portfolio-analytics"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { StockFinancials } from "@/components/stock-finance"
 import { FinancialChartCard } from "@/components/financial-chart"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-// Interface untuk tipe data dari API
 interface Emiten {
   ticker: string
   name: string
@@ -92,24 +73,25 @@ interface FinancialData {
   filename: string
 }
 
-// Fungsi untuk fetch data emiten
 async function fetchEmiten(): Promise<Emiten[]> {
   try {
     const apiUrl = "http://localhost:5000/api/emiten"
     const res = await fetch(apiUrl, { cache: "no-store" })
-    if (!res.ok) {
-      throw new Error(`Failed to fetch emiten: ${res.status} ${res.statusText}`)
-    }
+    if (!res.ok) throw new Error(`Failed to fetch emiten: ${res.status}`)
     const tickers: string[] = await res.json()
-    console.log("Fetched emitens:", tickers)
     return tickers.map((ticker) => ({ ticker, name: ticker.split(".")[0] }))
   } catch (error) {
-    console.error("Error fetching emitens:", error)
-    return [{ ticker: "BBRI.JK", name: "BBRI" }]
+    return [
+      { ticker: "BBRI.JK", name: "BBRI" },
+      { ticker: "BBCA.JK", name: "BBCA" },
+      { ticker: "TLKM.JK", name: "TLKM" },
+      { ticker: "ASII.JK", name: "ASII" },
+      { ticker: "BMRI.JK", name: "BMRI" },
+      { ticker: "BBNI.JK", name: "BBNI" },
+    ]
   }
 }
 
-// Fungsi untuk fetch data harga
 async function fetchPriceData(emiten: string, period: string): Promise<PriceData[]> {
   try {
     const apiUrl = `http://localhost:5000/api/harga?emiten=${emiten}&period=${period}`
@@ -117,7 +99,6 @@ async function fetchPriceData(emiten: string, period: string): Promise<PriceData
     if (!res.ok) throw new Error("Failed to fetch price data")
     return await res.json()
   } catch (error) {
-    console.error(error)
     return []
   }
 }
@@ -131,72 +112,10 @@ async function fetchFinancialData(entityCode: string): Promise<FinancialData[]> 
     if (!Array.isArray(data)) return []
     return data as FinancialData[]
   } catch (error) {
-    console.error("Error fetching financial data:", error)
     return []
   }
 }
 
-// Komponen Skeleton untuk loading
-function Skeleton({ className }: { className?: string }) {
-  return (
-    <div className={`animate-pulse bg-secondary/30 rounded ${className}`} />
-  )
-}
-
-// Komponen untuk baris tabel saham
-function StockRow({ emiten }: { emiten: Emiten }) {
-  const [stockPriceData, setStockPriceData] = useState<StockData | null>(null)
-
-  useEffect(() => {
-    async function loadStockPrice() {
-      const data = await fetchPriceData(emiten.ticker, "yearly")
-      setStockPriceData(calculateStockData(data))
-    }
-    loadStockPrice()
-  }, [emiten.ticker])
-
-  const formatCurrency = (value: number) => `Rp${value.toLocaleString("id-ID")}`
-  const formatPercentage = (value: number) => `${value.toFixed(1)}%`
-  const formatVolume = (value: number) => `${(value / 1000000).toFixed(1)}M`
-
-  return (
-    <TableRow className="hover:bg-secondary/5">
-      <TableCell className="font-medium">{emiten.ticker}</TableCell>
-      <TableCell>{emiten.name}</TableCell>
-      <TableCell className="text-right">
-        {stockPriceData ? formatCurrency(stockPriceData.price) : <Skeleton className="h-4 w-16 ml-auto" />}
-      </TableCell>
-      <TableCell
-        className={`text-right ${stockPriceData && stockPriceData.change >= 0 ? "text-accent" : "text-red-500"}`}
-      >
-        {stockPriceData ? (
-          (stockPriceData.change >= 0 ? "+" : "-") + formatCurrency(Math.abs(stockPriceData.change))
-        ) : (
-          <Skeleton className="h-4 w-16 ml-auto" />
-        )}
-      </TableCell>
-      <TableCell
-        className={`text-right ${stockPriceData && stockPriceData.changePercent >= 0 ? "text-accent" : "text-red-500"}`}
-      >
-        {stockPriceData ? (
-          (stockPriceData.changePercent >= 0 ? "+" : "-") + formatPercentage(Math.abs(stockPriceData.changePercent))
-        ) : (
-          <Skeleton className="h-4 w-16 ml-auto" />
-        )}
-      </TableCell>
-      <TableCell className="text-right">
-        {stockPriceData ? formatVolume(stockPriceData.volume) : <Skeleton className="h-4 w-16 ml-auto" />}
-      </TableCell>
-      <TableCell>
-        <Button variant="ghost" size="icon" className="hover:bg-accent/10 hover:text-accent">
-          <Plus className="h-4 w-4" />
-        </Button>
-      </TableCell>
-    </TableRow>
-  )
-}
-
-// Hitung data saham (price, change, dll.) dari data harga
 function calculateStockData(prices: PriceData[]): StockData | null {
   if (prices.length < 1) return null
   const latest = prices[prices.length - 1]
@@ -204,7 +123,7 @@ function calculateStockData(prices: PriceData[]): StockData | null {
 
   const price = latest.Close
   const change = previous ? price - previous.Close : 0
-  const changePercent = previous ? (change / previous.Close) * 100 : 0
+  const changePercent = previous && previous.Close ? (change / previous.Close) * 100 : 0
 
   return {
     price,
@@ -217,8 +136,38 @@ function calculateStockData(prices: PriceData[]): StockData | null {
   }
 }
 
-// Komponen Client
-export default function Dashboard() {
+function LiveClock() {
+  const [time, setTime] = useState("")
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      // format to WIB (UTC+7)
+      const formatted = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Jakarta",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).format(now)
+      setTime(`${formatted} WIB`)
+    }
+    updateTime()
+    const timer = setInterval(updateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <div className="flex items-center gap-1.5 font-mono text-xs text-[#94A3B8] tabular-nums">
+      <Clock className="h-3.5 w-3.5 text-[#10B981]" />
+      <span>{time || "SYNCING..."}</span>
+    </div>
+  )
+}
+
+export default function TerminalDashboard() {
   const [initialEmiten, setInitialEmiten] = useState<Emiten[]>([])
   const [activeStock, setActiveStock] = useState("BBRI.JK")
   const [priceData, setPriceData] = useState<PriceData[]>([])
@@ -227,8 +176,9 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("")
   const [financialData, setFinancialData] = useState<FinancialData[]>([])
   const [period, setPeriod] = useState<"daily" | "monthly" | "yearly">("yearly")
+  const [activeTab, setActiveTab] = useState("terminal")
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
 
-  // Fetch daftar emiten saat komponen dimuat
   useEffect(() => {
     async function loadInitialEmiten() {
       setIsLoading(true)
@@ -240,7 +190,6 @@ export default function Dashboard() {
     loadInitialEmiten()
   }, [])
 
-  // Fetch data harga saat activeStock atau period berubah
   useEffect(() => {
     async function loadPriceData() {
       if (!activeStock) return
@@ -251,538 +200,449 @@ export default function Dashboard() {
       setIsLoading(false)
     }
     loadPriceData()
-  }, [activeStock, period])
+  }, [activeStock, period, lastRefreshed])
 
   useEffect(() => {
     async function loadFinancialData() {
       if (!activeStock) return
-      const entityCode = activeStock.split('.')[0]
+      const entityCode = activeStock.split(".")[0]
       const data = await fetchFinancialData(entityCode)
       setFinancialData(data || [])
     }
     loadFinancialData()
-  }, [activeStock])
+  }, [activeStock, lastRefreshed])
 
-  // Filter emiten berdasarkan pencarian
   const filteredEmiten = initialEmiten.filter(
     (emiten) =>
       emiten.ticker.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emiten.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      emiten.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const formatCurrency = (value: number) => `Rp${value.toLocaleString("id-ID")}`
-  const formatPercentage = (value: number) => `${value.toFixed(1)}%`
-  const formatVolume = (value: number) => `${(value / 1000000).toFixed(1)}M`
+  const handleRefresh = () => {
+    setLastRefreshed(new Date())
+  }
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen flex-col bg-gradient-to-br from-secondary/50 to-secondary">
-        <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-white/80 backdrop-blur-md px-6 shadow-sm">
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-          <div className="flex items-center gap-2">
-            <div className="bg-primary rounded-lg p-1.5">
-              <LineChart className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              pahamsaham
-            </span>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            <Skeleton className="h-8 w-24 rounded-full" />
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <Skeleton className="h-8 w-32 rounded-full" />
-          </div>
-        </header>
-        <div className="flex flex-1">
-          <aside className="hidden md:block border-r bg-white/80 dark:bg-background/95 backdrop-blur-sm fixed top-16 left-0 w-[240px] h-[calc(100vh-64px)] z-40">
-            <div className="flex flex-col h-full gap-2 p-4">
-              <Skeleton className="h-9 w-full" />
-              <Skeleton className="h-5 w-20 mt-2" />
-              <div className="grid gap-1 flex-1 overflow-y-auto max-h-30">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-              <Separator className="bg-secondary/30" />
-              <div className="grid gap-1 py-2">
-                {[...Array(7)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full" />
-                ))}
-              </div>
-              <Skeleton className="h-4 w-16 mt-2" />
-            </div>
-          </aside>
-          <main className="flex-1 md:ml-[240px] p-4 md:p-6">
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <div>
-                  <Skeleton className="h-7 w-32" />
-                  <Skeleton className="h-4 w-48 mt-2" />
-                </div>
-                <Skeleton className="ml-auto h-9 w-24" />
-              </div>
-              <div className="flex gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-9 w-20" />
-                ))}
-              </div>
-              <Skeleton className="h-32 w-full" />
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <div className="lg:col-span-5">
-                  <Skeleton className="h-64 w-full" />
-                </div>
-                <div className="lg:col-span-2">
-                  <Skeleton className="h-64 w-full" />
-                </div>
-              </div>
-              <div className="grid grid-cols-[1fr_2fr] gap-4">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
-              </div>
-              <Skeleton className="h-48 w-full" />
-            </div>
-          </main>
-        </div>
-      </div>
-    )
+  const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`
+  const formatPercentage = (value: number) => `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`
+  const formatVolume = (value: number) => {
+    if (value >= 1000000000) return `${(value / 1000000000).toFixed(2)}B`
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
+    return value.toLocaleString("id-ID")
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-secondary/50 to-secondary dark:from-background dark:to-background">
-      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-white/80 dark:bg-background/95 backdrop-blur-md px-6 shadow-sm">
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle menu</span>
-        </Button>
-        <div className="flex items-center gap-2">
-          <div className="bg-primary rounded-lg p-1.5">
-            <LineChart className="h-5 w-5 text-white dark:text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            pahamsaham
-          </span>
-        </div>
-        <StockTicker />
-        <div className="ml-auto flex items-center gap-4">
-          <form className="hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Cari saham..."
-                className="w-64 pl-8 border-secondary/30 bg-white/80 dark:bg-background/80 focus:border-accent"
-              />
-            </div>
-          </form>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full border-secondary/30 bg-white/80 dark:bg-background/80 hover:bg-accent/10 hover:text-accent relative"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] text-white">
-              3
+    <div className="flex flex-col min-h-screen bg-[#090A0F] text-[#E2E8F0] selection:bg-[#10B981]/30">
+      {/* 1. Terminal Top Header */}
+      <header className="sticky top-0 z-50 flex items-center justify-between h-12 bg-[#090A0F] border-b border-[#1E2638] px-4 font-mono select-none">
+        {/* Left: Terminal Identity & System Status */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 pr-3 border-r border-[#1E2638]">
+            <Terminal className="h-4 w-4 text-[#10B981]" />
+            <span className="font-bold text-sm tracking-widest text-white">IDX//TERMINAL</span>
+            <span className="text-[10px] bg-[#161B26] text-[#10B981] px-1.5 py-0.5 rounded border border-[#1E2638] font-mono">
+              v2.4-PRO
             </span>
-            <span className="sr-only">Notifikasi</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full border-secondary/30 bg-white/80 dark:bg-background/80 hover:bg-accent/10 hover:text-accent"
+          </div>
+
+          <div className="hidden lg:flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1.5 text-[#10B981]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
+              <span>IDX: CONNECTED</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[#94A3B8]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#3B82F6]" />
+              <span>AIRFLOW: NOMINAL</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[#94A3B8]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+              <span>LATENCY: 18ms</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Middle: Stock Ticker Tape */}
+        <StockTicker />
+
+        {/* Right: Live Clock & Action */}
+        <div className="flex items-center gap-3 pl-3">
+          <LiveClock />
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono bg-[#161B26] hover:bg-[#1E2638] text-[#10B981] border border-[#1E2638] rounded transition-colors"
+            title="Refresh Data Feeds"
           >
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Pengaturan</span>
-          </Button>
-          <ThemeToggle />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="gap-2 rounded-full border-secondary/30 bg-white/80 dark:bg-background/80 hover:bg-accent/10 hover:text-accent"
-              >
-                <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium dark:bg-primary/10">
-                  GS
-                </div>
-                <span className="hidden md:inline-flex">Gojo Satoru</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Profil</DropdownMenuItem>
-              <DropdownMenuItem>Pengaturan</DropdownMenuItem>
-              <DropdownMenuItem>Langganan</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Keluar</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <RefreshCw className="h-3 w-3" />
+            <span className="hidden sm:inline">REFRESH</span>
+          </button>
         </div>
       </header>
 
-      <div className="flex flex-1">
-        <aside className="hidden md:block border-r bg-white/80 dark:bg-background/95 backdrop-blur-sm fixed top-16 left-0 w-[240px] h-[calc(100vh-64px)] z-40">
-          <div className="flex flex-col h-full gap-2 p-4">
-            <nav className="grid gap-1 py-2">
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 font-normal text-sm hover:bg-accent/10 hover:text-accent"
-                asChild
-              >
-                <Link href="#">
-                  <TrendingUp className="h-4 w-4" />
-                  Ringkasan Pasar
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 font-normal text-sm hover:bg-accent/10 hover:text-accent"
-                asChild
-              >
-                <Link href="#">
-                  <Star className="h-4 w-4" />
-                  Watchlist
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 font-normal text-sm hover:bg-accent/10 hover:text-accent"
-                asChild
-              >
-                <Link href="#">
-                  <Briefcase className="h-4 w-4" />
-                  Portofolio
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 font-normal text-sm hover:bg-accent/10 hover:text-accent"
-                asChild
-              >
-                <Link href="#">
-                  <BarChart3 className="h-4 w-4" />
-                  Analisis Teknikal
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 font-normal text-sm hover:bg-accent/10 hover:text-accent"
-                asChild
-              >
-                <Link href="#">
-                  <Newspaper className="h-4 w-4" />
-                  Berita & Analisis
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 font-normal text-sm hover:bg-accent/10 hover:text-accent"
-                asChild
-              >
-                <Link href="#">
-                  <Globe className="h-4 w-4" />
-                  Pasar Global
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 font-normal text-sm hover:bg-accent/10 hover:text-accent"
-                asChild
-              >
-                <Link href="#">
-                  <Clock className="h-4 w-4" />
-                  Riwayat
-                </Link>
-              </Button>
-            </nav>
-            <Separator className="bg-secondary/30" />
-            <div className="flex items-center gap-2 mb-2">
-              <Input
-                type="search"
-                placeholder="Cari saham..."
+      {/* 2. Sub Navigation Bar */}
+      <div className="bg-[#0F121A] border-b border-[#1E2638] px-4 py-1.5 flex items-center justify-between overflow-x-auto">
+        <div className="flex items-center gap-1">
+          {[
+            { id: "terminal", label: "MARKET TERMINAL" },
+            { id: "stocks", label: "ALL EQUITIES" },
+            { id: "correlation", label: "CORRELATION" },
+            { id: "portfolio", label: "PORTFOLIO NAV" },
+            { id: "news", label: "FINANCIAL WIRE" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1 text-xs font-mono rounded transition-colors whitespace-nowrap ${
+                activeTab === tab.id
+                  ? "bg-[#161B26] text-[#10B981] font-bold border border-[#1E2638] shadow-sm"
+                  : "text-[#64748B] hover:text-[#94A3B8]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Quick Search in Subnav */}
+        <div className="hidden sm:flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-[#64748B]" />
+            <input
+              type="text"
+              placeholder="QUICK TICKER SEARCH..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-7 w-48 pl-8 pr-2 text-xs font-mono bg-[#090A0F] border border-[#1E2638] rounded text-[#E2E8F0] placeholder-[#64748B] focus:outline-none focus:border-[#10B981]"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Main Workspace Container */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Side: Emiten Directory & Watchlist */}
+        <aside className="w-64 border-r border-[#1E2638] bg-[#090A0F] flex flex-col shrink-0 hidden md:flex">
+          <div className="p-3 border-b border-[#1E2638]">
+            <div className="flex items-center justify-between text-[11px] font-mono text-[#64748B] uppercase tracking-wider mb-2">
+              <span>WATCHLIST DIRECTORY</span>
+              <span className="text-[#10B981]">{filteredEmiten.length} SYMBOLS</span>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-[#64748B]" />
+              <input
+                type="text"
+                placeholder="Filter watchlist..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 border-secondary/30 bg-white/80 focus:border-accent text-sm"
+                className="w-full h-7 pl-8 pr-2 text-xs font-mono bg-[#0F121A] border border-[#1E2638] rounded text-[#E2E8F0] placeholder-[#64748B] focus:outline-none focus:border-[#10B981]"
               />
             </div>
+          </div>
 
-            <h3 className="mb-2 text-sm font-medium text-primary dark:text-blue/60">Watchlist</h3>
-            <div className="grid gap-1 flex-1 overflow-y-auto max-h-30">
-              <div className="grid gap-1">
-                {filteredEmiten.map((emiten) => (
-                  <Button
-                    key={emiten.ticker}
-                    variant={activeStock === emiten.ticker ? "secondary" : "ghost"}
-                    className={`justify-between h-auto py-2 text-sm ${activeStock === emiten.ticker ? "bg-primary/10 hover:bg-primary/20 text-primary border-none" : "hover:bg-primary/10"}`}
-                    onClick={() => setActiveStock(emiten.ticker)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{emiten.ticker}</span>
-                      <span className="text-xs text-muted-foreground">{emiten.name}</span>
+          <div className="flex-1 overflow-y-auto divide-y divide-[#1E2638]/60">
+            {filteredEmiten.map((emiten) => {
+              const isSelected = activeStock === emiten.ticker
+              return (
+                <button
+                  key={emiten.ticker}
+                  type="button"
+                  onClick={() => setActiveStock(emiten.ticker)}
+                  className={`w-full text-left p-2.5 flex items-center justify-between transition-colors font-mono ${
+                    isSelected
+                      ? "bg-[#161B26] border-l-2 border-l-[#10B981] text-white"
+                      : "hover:bg-[#0F121A] text-[#94A3B8]"
+                  }`}
+                >
+                  <div>
+                    <div className="font-bold text-xs flex items-center gap-1.5">
+                      <span className={isSelected ? "text-[#10B981]" : "text-white"}>
+                        {emiten.ticker}
+                      </span>
                     </div>
-                    {stockData && emiten.ticker === activeStock && (
+                    <div className="text-[10px] text-[#64748B] truncate max-w-[130px]">
+                      {emiten.name}
+                    </div>
+                  </div>
+
+                  {isSelected && stockData && (
+                    <div className="text-right">
+                      <div className="text-xs font-semibold tabular-nums text-white">
+                        {formatCurrency(stockData.price)}
+                      </div>
                       <div
-                        className={`flex items-center gap-1 ${stockData.changePercent >= 0 ? "text-accent" : "text-red-500"}`}
+                        className={`text-[10px] font-bold tabular-nums flex items-center justify-end ${
+                          stockData.changePercent >= 0 ? "text-[#10B981]" : "text-[#EF4444]"
+                        }`}
                       >
                         {stockData.changePercent >= 0 ? (
-                          <ArrowUp className="h-3 w-3" />
+                          <ArrowUp className="h-2.5 w-2.5 mr-0.5" />
                         ) : (
-                          <ArrowDown className="h-3 w-3" />
+                          <ArrowDown className="h-2.5 w-2.5 mr-0.5" />
                         )}
-                        <span className="text-xs">{formatPercentage(Math.abs(stockData.changePercent))}</span>
+                        {formatPercentage(stockData.changePercent)}
                       </div>
-                    )}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2 mb-2">
-              <p className="text-sm text-muted-foreground">@Big-Data</p>
-            </div>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="p-2 border-t border-[#1E2638] bg-[#0F121A] text-[10px] font-mono text-[#64748B] flex items-center justify-between">
+            <span>FEED: QUOTE_STREAM</span>
+            <span className="text-[#10B981]">OK</span>
           </div>
         </aside>
 
-        <main className="flex-1 md:ml-[240px] overflow-y-auto h-[calc(100vh-64px)]">
-          <div className="p-4 md:p-6 space-y-4">
-            <div className="flex items-center">
-              <div>
-                <h1 className="text-lg font-semibold md:text-2xl text-primary">Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Pantau pergerakan saham Indonesia secara real-time</p>
-              </div>
-              <div className="ml-auto flex items-center gap-2">
-                <Button className="bg-accent hover:bg-accent/90 text-white">Refresh</Button>
-              </div>
-            </div>
-            <Tabs defaultValue="overview" className="space-y-4">
-              <TabsList className="bg-white/80 dark:bg-background/80 p-1">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                  Ringkasan
-                </TabsTrigger>
-                <TabsTrigger value="stocks" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                  Saham
-                </TabsTrigger>
-                <TabsTrigger
-                  value="portfolio"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-white"
-                >
-                  Portofolio
-                </TabsTrigger>
-                <TabsTrigger
-                  value="comparison"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-white"
-                >
-                  Perbandingan
-                </TabsTrigger>
-                <TabsTrigger value="news" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                  Berita
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="overview" className="space-y-4 slide-up">
-                <MarketOverview />
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                  <Card className="lg:col-span-5 bg-white/80 backdrop-blur-sm border-secondary/20 card-hover">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <span className="bg-primary text-white text-xs px-2 py-1 rounded">{activeStock}</span>
-                        {initialEmiten.find((e) => e.ticker === activeStock)?.name || "Unknown"}
-                      </CardTitle>
-                      <CardDescription>
-                        {stockData ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl font-bold">{formatCurrency(stockData.price)}</span>
-                            <div
-                              className={`flex items-center gap-1 ${stockData.change >= 0 ? "text-accent" : "text-red-500"}`}
-                            >
-                              {stockData.change >= 0 ? (
-                                <ArrowUp className="h-4 w-4" />
-                              ) : (
-                                <ArrowDown className="h-4 w-4" />
-                              )}
-                              <span>
-                                {formatCurrency(Math.abs(stockData.change))} (
-                                {formatPercentage(Math.abs(stockData.changePercent))})
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Skeleton className="h-8 w-24" />
-                            <Skeleton className="h-6 w-32" />
-                          </div>
-                        )}
-                      </CardDescription>
-                      <div className="flex items-center gap-1 mt-2">
-                        <span className="text-sm text-muted-foreground">Periode:</span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="h-7">
-                              {period.charAt(0).toUpperCase() + period.slice(1)}
-                              <ChevronDown className="ml-2 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            <DropdownMenuItem onClick={() => setPeriod("daily")}>Daily</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPeriod("monthly")}>Monthly</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPeriod("yearly")}>Yearly</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+        {/* Center/Right Main Panel */}
+        <main className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#090A0F]">
+          {/* TAB 1: Main Terminal Overview */}
+          {activeTab === "terminal" && (
+            <>
+              {/* High-density Market Overview (Indices, Sectors, FX) */}
+              <MarketOverview />
+
+              {/* Main Active Emiten Chart Panel & Stats */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                {/* Left 8-col: Interactive Stock Chart */}
+                <div className="lg:col-span-8 bg-[#0F121A] border border-[#1E2638] hover:border-[#2E3A54] rounded p-3 transition-colors flex flex-col">
+                  {/* Emiten Header Strip */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#1E2638]">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 px-2 py-1 rounded font-mono font-bold text-sm">
+                        {activeStock}
                       </div>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                      {isLoading ? (
-                        <Skeleton className="h-48 w-full" />
-                      ) : (
-                        <StockChart data={priceData} />
-                      )}
-                    </CardContent>
-                  </Card>
-                  <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm border-secondary/20 card-hover">
-                    <CardHeader>
-                      <CardTitle>Detail Saham</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {stockData ? (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="text-muted-foreground">Open</div>
-                            <div className="text-right font-medium">{formatCurrency(stockData.open)}</div>
-                            <div className="text-muted-foreground">High</div>
-                            <div className="text-right font-medium">{formatCurrency(stockData.high)}</div>
-                            <div className="text-muted-foreground">Low</div>
-                            <div className="text-right font-medium">{formatCurrency(stockData.low)}</div>
-                            <div className="text-muted-foreground">Close</div>
-                            <div className="text-right font-medium">{formatCurrency(stockData.price)}</div>
-                            <div className="text-muted-foreground">Volume</div>
-                            <div className="text-right font-medium">{formatVolume(stockData.volume)}</div>
-                          </div>
-                          <Separator className="bg-secondary/30" />
-                          <div className="flex justify-between">
-                            <Button
-                              variant="outline"
-                              className="border-secondary/30 bg-white hover:bg-primary/10 hover:text-primary hover:border-primary/50 dark:hover:border-secondary/30 dark:hover:bg-primary/30 dark:hover:text-blue-100 dark:bg-card dark:text-blue-100 dark:border-card/50"
-                            >
-                              Beli
-                            </Button>
-                            <Button className="bg-accent hover:bg-accent/90 text-white">
-                              Tambah ke Watchlist
-                            </Button>
-                          </div>
+                      <div>
+                        <div className="text-xs font-mono text-[#64748B]">INDONESIA STOCK EXCHANGE</div>
+                        <div className="text-sm font-bold text-white font-mono">
+                          {initialEmiten.find((e) => e.ticker === activeStock)?.name || activeStock.split(".")[0]}
                         </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            {[...Array(5)].map((_, i) => (
-                              <>
-                                <Skeleton key={`label-${i}`} className="h-4 w-12" />
-                                <Skeleton key={`value-${i}`} className="h-4 w-16 ml-auto" />
-                              </>
-                            ))}
-                          </div>
-                          <Separator className="bg-secondary/30" />
-                          <div className="flex justify-between">
-                            <Skeleton className="h-9 w-16" />
-                            <Skeleton className="h-9 w-32" />
-                          </div>
+                      </div>
+                    </div>
+
+                    {/* Big Price Display */}
+                    {stockData ? (
+                      <div className="flex items-baseline gap-2 font-mono">
+                        <span className="text-2xl font-bold text-white tabular-nums">
+                          {formatCurrency(stockData.price)}
+                        </span>
+                        <div
+                          className={`flex items-center text-xs font-bold px-1.5 py-0.5 rounded border ${
+                            stockData.change >= 0
+                              ? "bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30"
+                              : "bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/30"
+                          }`}
+                        >
+                          {stockData.change >= 0 ? (
+                            <ArrowUp className="h-3 w-3 mr-0.5" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3 mr-0.5" />
+                          )}
+                          <span>
+                            {stockData.change >= 0 ? "+" : ""}
+                            {formatCurrency(stockData.change)} ({formatPercentage(stockData.changePercent)})
+                          </span>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                      </div>
+                    ) : (
+                      <div className="text-xs font-mono text-[#64748B] animate-pulse">STREAMING PRICE...</div>
+                    )}
+
+                    {/* Period selection */}
+                    <div className="flex items-center gap-1 bg-[#090A0F] p-0.5 rounded border border-[#1E2638]">
+                      {(["daily", "monthly", "yearly"] as const).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setPeriod(p)}
+                          className={`px-2 py-0.5 text-[11px] font-mono uppercase rounded ${
+                            period === p
+                              ? "bg-[#161B26] text-[#10B981] font-bold border border-[#1E2638]"
+                              : "text-[#64748B] hover:text-[#94A3B8]"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Stock Chart Component */}
+                  <div className="pt-2 flex-1">
+                    <StockChart data={priceData} />
+                  </div>
                 </div>
-                <div className="grid grid-cols-[1fr_2fr] gap-4">
+
+                {/* Right 4-col: Emiten Metrics & Trading Stats */}
+                <div className="lg:col-span-4 bg-[#0F121A] border border-[#1E2638] hover:border-[#2E3A54] rounded p-3 transition-colors flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between pb-2 border-b border-[#1E2638]">
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">
+                        MARKET METRICS
+                      </span>
+                      <span className="font-mono text-[10px] text-[#64748B]">SESSION SUMMARY</span>
+                    </div>
+
+                    {stockData ? (
+                      <div className="divide-y divide-[#1E2638]/70 text-xs font-mono mt-2">
+                        <div className="flex justify-between py-2">
+                          <span className="text-[#64748B]">OPENING PRICE</span>
+                          <span className="text-white tabular-nums font-medium">{formatCurrency(stockData.open)}</span>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-[#64748B]">SESSION HIGH</span>
+                          <span className="text-[#10B981] tabular-nums font-medium">
+                            {formatCurrency(stockData.high)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-[#64748B]">SESSION LOW</span>
+                          <span className="text-[#EF4444] tabular-nums font-medium">
+                            {formatCurrency(stockData.low)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-[#64748B]">PREVIOUS CLOSE</span>
+                          <span className="text-white tabular-nums font-medium">
+                            {formatCurrency(stockData.price - stockData.change)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-[#64748B]">ACCUMULATED VOLUME</span>
+                          <span className="text-white tabular-nums font-bold">
+                            {formatVolume(stockData.volume)} LOTS
+                          </span>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-[#64748B]">SPREAD HIGH/LOW</span>
+                          <span className="text-[#06B6D4] tabular-nums font-medium">
+                            {formatCurrency(stockData.high - stockData.low)}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-xs font-mono text-[#64748B]">
+                        INITIALIZING EMITEN DATA...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Terminal Action Buttons */}
+                  <div className="pt-3 border-t border-[#1E2638] mt-4 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        className="py-1.5 font-mono text-xs font-bold text-[#10B981] bg-[#10B981]/15 hover:bg-[#10B981]/25 border border-[#10B981]/40 rounded transition-colors"
+                      >
+                        ORDER BUY
+                      </button>
+                      <button
+                        type="button"
+                        className="py-1.5 font-mono text-xs font-bold text-[#EF4444] bg-[#EF4444]/15 hover:bg-[#EF4444]/25 border border-[#EF4444]/40 rounded transition-colors"
+                      >
+                        ORDER SELL
+                      </button>
+                    </div>
+                    <div className="text-[10px] font-mono text-center text-[#64748B]">
+                      EXECUTION ROUTED VIA DIRECT IDX FIX GATEWAY
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Health Indicators & Fundamental Performance */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                <div className="lg:col-span-5">
                   <StockFinancials financialData={financialData} />
+                </div>
+                <div className="lg:col-span-7">
                   <FinancialChartCard financialData={financialData} />
                 </div>
-                <StockNews />
-              </TabsContent>
-              <TabsContent value="stocks" className="space-y-4 slide-up">
-                <Card className="bg-white/80 backdrop-blur-sm border-secondary/20 card-hover">
-                  <CardHeader>
-                    <CardTitle>Daftar Saham</CardTitle>
-                    <CardDescription>Daftar saham yang paling aktif diperdagangkan hari ini</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-secondary/5">
-                          <TableHead>Kode</TableHead>
-                          <TableHead>Nama</TableHead>
-                          <TableHead className="text-right">Harga</TableHead>
-                          <TableHead className="text-right">Perubahan</TableHead>
-                          <TableHead className="text-right">% Perubahan</TableHead>
-                          <TableHead className="text-right">Volume</TableHead>
-                          <TableHead></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {initialEmiten.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={7}>
-                              <div className="space-y-2">
-                                {[...Array(5)].map((_, i) => (
-                                  <Skeleton key={i} className="h-8 w-full" />
-                                ))}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          initialEmiten.map((emiten) => <StockRow key={emiten.ticker} emiten={emiten} />)
-                        )}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      variant="outline"
-                      className="w-full border-secondary/30 hover:bg-primary/10 hover:text-primary hover:border-primary/50"
-                    >
-                      Lihat Semua Saham
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-              <TabsContent value="portfolio" className="space-y-4 slide-up">
-                <PortfolioAnalytics />
-                <Card className="bg-white/80 backdrop-blur-sm border-secondary/20 card-hover">
-                  <CardHeader>
-                    <CardTitle>Saham yang Dimiliki</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-secondary/5">
-                          <TableHead>Kode</TableHead>
-                          <TableHead>Nama</TableHead>
-                          <TableHead className="text-right">Jumlah</TableHead>
-                          <TableHead className="text-right">Harga Beli</TableHead>
-                          <TableHead className="text-right">Harga Saat Ini</TableHead>
-                          <TableHead className="text-right">Nilai</TableHead>
-                          <TableHead className="text-right">P/L</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow className="hover:bg-secondary/5">
-                          <TableCell colSpan={7}>Data portofolio belum tersedia</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="comparison" className="space-y-4 slide-up">
-                <StockComparison />
-              </TabsContent>
-              <TabsContent value="news" className="space-y-4 slide-up">
-                <StockNews fullPage={true} />
-              </TabsContent>
-            </Tabs>
-          </div>
+              </div>
+
+              {/* Compact Financial News Stream */}
+              <StockNews fullPage={false} />
+            </>
+          )}
+
+          {/* TAB 2: All Equities Grid */}
+          {activeTab === "stocks" && (
+            <div className="bg-[#0F121A] border border-[#1E2638] rounded overflow-hidden">
+              <div className="p-3 border-b border-[#1E2638] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-[#10B981]" />
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">
+                    COMPREHENSIVE IDX EQUITY MATRIX
+                  </span>
+                </div>
+                <span className="font-mono text-[10px] text-[#64748B]">{filteredEmiten.length} LISTED ASSETS</span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono">
+                  <thead>
+                    <tr className="border-b border-[#1E2638] text-[#64748B] text-left">
+                      <th className="p-3 uppercase">TICKER</th>
+                      <th className="p-3 uppercase">COMPANY NAME</th>
+                      <th className="p-3 uppercase">MARKET</th>
+                      <th className="p-3 text-right uppercase">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1E2638]/50">
+                    {filteredEmiten.map((emiten) => (
+                      <tr
+                        key={emiten.ticker}
+                        className="hover:bg-[#161B26]/60 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setActiveStock(emiten.ticker)
+                          setActiveTab("terminal")
+                        }}
+                      >
+                        <td className="p-3 font-bold text-[#10B981]">{emiten.ticker}</td>
+                        <td className="p-3 text-[#E2E8F0]">{emiten.name}</td>
+                        <td className="p-3 text-[#64748B]">IDX MAIN BOARD</td>
+                        <td className="p-3 text-right">
+                          <button
+                            type="button"
+                            className="text-[11px] font-mono text-[#10B981] hover:underline"
+                          >
+                            OPEN TERMINAL &rarr;
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Multi-Emiten Correlation */}
+          {activeTab === "correlation" && <StockComparison />}
+
+          {/* TAB 4: Portfolio NAV */}
+          {activeTab === "portfolio" && <PortfolioAnalytics />}
+
+          {/* TAB 5: Full News Wire */}
+          {activeTab === "news" && <StockNews fullPage={true} />}
         </main>
       </div>
+
+      {/* 4. Terminal Status Bar Footer */}
+      <footer className="h-7 bg-[#090A0F] border-t border-[#1E2638] px-4 flex items-center justify-between text-[11px] font-mono text-[#64748B] select-none">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1 text-[#10B981]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+            DATA ENGINE: ACTIVE
+          </span>
+          <span className="hidden sm:inline">ETL PIPELINE: HOURLY SYNC</span>
+          <span className="hidden md:inline">POSTGRES + DUCKDB STORAGE</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span>SOURCE: IDX / YAHOO FINANCE</span>
+          <span className="text-[#E2E8F0]">TERMINAL MODE</span>
+        </div>
+      </footer>
     </div>
   )
 }
