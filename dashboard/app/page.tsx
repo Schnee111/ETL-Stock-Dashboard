@@ -4,29 +4,25 @@ import { useState, useEffect } from "react"
 import {
   ArrowDown,
   ArrowUp,
-  Activity,
-  Terminal,
-  Clock,
-  RefreshCw,
   Search,
-  SlidersHorizontal,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
   ChevronRight,
-  Wifi,
   BarChart3,
   Layers,
-  Database,
+  FileText,
+  PieChart,
   ExternalLink,
 } from "lucide-react"
 
 import StockChart from "@/components/stock-chart"
 import MarketOverview from "@/components/market-overview"
 import StockNews from "@/components/stock-news"
-import StockTicker from "@/components/stock-ticker"
 import StockComparison from "@/components/stock-comparison"
 import PortfolioAnalytics from "@/components/portfolio-analytics"
 import { StockFinancials } from "@/components/stock-finance"
 import { FinancialChartCard } from "@/components/financial-chart"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface Emiten {
   ticker: string
@@ -80,7 +76,7 @@ async function fetchEmiten(): Promise<Emiten[]> {
     if (!res.ok) throw new Error(`Failed to fetch emiten: ${res.status}`)
     const tickers: string[] = await res.json()
     return tickers.map((ticker) => ({ ticker, name: ticker.split(".")[0] }))
-  } catch (error) {
+  } catch {
     return [
       { ticker: "BBRI.JK", name: "BBRI" },
       { ticker: "BBCA.JK", name: "BBCA" },
@@ -98,7 +94,7 @@ async function fetchPriceData(emiten: string, period: string): Promise<PriceData
     const res = await fetch(apiUrl, { cache: "no-store" })
     if (!res.ok) throw new Error("Failed to fetch price data")
     return await res.json()
-  } catch (error) {
+  } catch {
     return []
   }
 }
@@ -111,22 +107,23 @@ async function fetchFinancialData(entityCode: string): Promise<FinancialData[]> 
     const data = await res.json()
     if (!Array.isArray(data)) return []
     return data as FinancialData[]
-  } catch (error) {
+  } catch {
     return []
   }
 }
 
 function calculateStockData(prices: PriceData[]): StockData | null {
   if (prices.length < 1) return null
-  const latest = prices[prices.length - 1]
-  const previous = prices.length > 1 ? prices[prices.length - 2] : null
 
-  const price = latest.Close
-  const change = previous ? price - previous.Close : 0
-  const changePercent = previous && previous.Close ? (change / previous.Close) * 100 : 0
+  const sortedPrices = [...prices].sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime())
+  const latest = sortedPrices[sortedPrices.length - 1]
+  const previous = sortedPrices.length > 1 ? sortedPrices[sortedPrices.length - 2] : latest
+
+  const change = latest.Close - previous.Close
+  const changePercent = previous.Close > 0 ? (change / previous.Close) * 100 : 0
 
   return {
-    price,
+    price: latest.Close,
     change,
     changePercent,
     open: latest.Open,
@@ -137,510 +134,377 @@ function calculateStockData(prices: PriceData[]): StockData | null {
 }
 
 function LiveClock() {
-  const [time, setTime] = useState("")
+  const [timeStr, setTimeStr] = useState<string>("")
 
   useEffect(() => {
-    const updateTime = () => {
+    const update = () => {
       const now = new Date()
-      // format to WIB (UTC+7)
-      const formatted = new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Asia/Jakarta",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }).format(now)
-      setTime(`${formatted} WIB`)
+      setTimeStr(
+        now.toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        })
+      )
     }
-    updateTime()
-    const timer = setInterval(updateTime, 1000)
+    update()
+    const timer = setInterval(update, 1000)
     return () => clearInterval(timer)
   }, [])
 
-  return (
-    <div className="flex items-center gap-1.5 font-mono text-xs text-[#94A3B8] tabular-nums">
-      <Clock className="h-3.5 w-3.5 text-[#10B981]" />
-      <span>{time || "SYNCING..."}</span>
-    </div>
-  )
+  return <span className="font-mono text-xs tabular-nums text-[#9ca3af]">{timeStr || "--:--:--"} WIB</span>
 }
 
-export default function TerminalDashboard() {
-  const [initialEmiten, setInitialEmiten] = useState<Emiten[]>([])
-  const [activeStock, setActiveStock] = useState("BBRI.JK")
+export default function Home() {
+  const [emitenList, setEmitenList] = useState<Emiten[]>([])
+  const [activeStock, setActiveStock] = useState<string>("BBRI.JK")
+  const [period, setPeriod] = useState<string>("1y")
   const [priceData, setPriceData] = useState<PriceData[]>([])
   const [stockData, setStockData] = useState<StockData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
   const [financialData, setFinancialData] = useState<FinancialData[]>([])
-  const [period, setPeriod] = useState<"daily" | "monthly" | "yearly">("yearly")
-  const [activeTab, setActiveTab] = useState("terminal")
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [activeTab, setActiveTab] = useState<string>("terminal")
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
-  useEffect(() => {
-    async function loadInitialEmiten() {
-      setIsLoading(true)
-      const emitens = await fetchEmiten()
-      setInitialEmiten(emitens)
-      setActiveStock(emitens[0]?.ticker || "BBRI.JK")
+  const loadData = async (ticker: string, per: string) => {
+    setIsLoading(true)
+    try {
+      const [emitens, prices] = await Promise.all([
+        fetchEmiten(),
+        fetchPriceData(ticker, per),
+      ])
+      setEmitenList(emitens)
+      setPriceData(prices)
+      setStockData(calculateStockData(prices))
+
+      const baseCode = ticker.split(".")[0]
+      const financials = await fetchFinancialData(baseCode)
+      setFinancialData(financials)
+    } catch {
+      // Graceful fallback
+    } finally {
       setIsLoading(false)
     }
-    loadInitialEmiten()
-  }, [])
+  }
 
   useEffect(() => {
-    async function loadPriceData() {
-      if (!activeStock) return
-      setIsLoading(true)
-      const data = await fetchPriceData(activeStock, period)
-      setPriceData(data)
-      setStockData(calculateStockData(data))
-      setIsLoading(false)
-    }
-    loadPriceData()
-  }, [activeStock, period, lastRefreshed])
-
-  useEffect(() => {
-    async function loadFinancialData() {
-      if (!activeStock) return
-      const entityCode = activeStock.split(".")[0]
-      const data = await fetchFinancialData(entityCode)
-      setFinancialData(data || [])
-    }
-    loadFinancialData()
-  }, [activeStock, lastRefreshed])
-
-  const filteredEmiten = initialEmiten.filter(
-    (emiten) =>
-      emiten.ticker.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emiten.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    loadData(activeStock, period)
+  }, [activeStock, period])
 
   const handleRefresh = () => {
-    setLastRefreshed(new Date())
+    loadData(activeStock, period)
   }
 
-  const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`
-  const formatPercentage = (value: number) => `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`
-  const formatVolume = (value: number) => {
-    if (value >= 1000000000) return `${(value / 1000000000).toFixed(2)}B`
-    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
-    return value.toLocaleString("id-ID")
-  }
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(val)
+
+  const formatNumber = (val: number) =>
+    new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(val)
+
+  const filteredEmiten = emitenList.filter((e) =>
+    e.ticker.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const isProfit = stockData ? stockData.change >= 0 : true
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#090A0F] text-[#E2E8F0] selection:bg-[#10B981]/30">
-      {/* 1. Terminal Top Header */}
-      <header className="sticky top-0 z-50 flex items-center justify-between h-12 bg-[#090A0F] border-b border-[#1E2638] px-4 font-mono select-none">
-        {/* Left: Terminal Identity & System Status */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 pr-3 border-r border-[#1E2638]">
-            <Terminal className="h-4 w-4 text-[#10B981]" />
-            <span className="font-bold text-sm tracking-widest text-white">IDX//TERMINAL</span>
-            <span className="text-[10px] bg-[#161B26] text-[#10B981] px-1.5 py-0.5 rounded border border-[#1E2638] font-mono">
-              v2.4-PRO
-            </span>
+    <div className="flex flex-col min-h-screen bg-[#0d0f14] text-[#f4f5f8] select-none">
+      {/* 1. Header: AETER Breadcrumb Strip */}
+      <div className="px-4 lg:px-6 pt-4 pb-2">
+        <header className="breadcrumb-strip">
+          <div className="flex items-center gap-2.5 text-xs">
+            <span className="font-bold tracking-tight text-white">IDX</span>
+            <span className="text-white/20">/</span>
+            <span className="text-[#f4f5f8] font-semibold">Market Intelligence</span>
+            <span className="text-white/20 hidden sm:inline">·</span>
+            <span className="text-[#9ca3af] hidden sm:inline">Equity Analytics</span>
+            <span className="text-white/20 hidden md:inline">·</span>
+            <span className="text-[#6b7280] hidden md:inline">Indonesia Stock Exchange</span>
           </div>
 
-          <div className="hidden lg:flex items-center gap-3 text-[11px]">
-            <div className="flex items-center gap-1.5 text-[#10B981]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
-              <span>IDX: CONNECTED</span>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs">
+              <span className="emerald-pip" />
+              <span className="text-[#f4f5f8] font-medium text-[11.5px]">Live Feed</span>
             </div>
-            <div className="flex items-center gap-1.5 text-[#94A3B8]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#3B82F6]" />
-              <span>AIRFLOW: NOMINAL</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[#94A3B8]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-              <span>LATENCY: 18ms</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Middle: Stock Ticker Tape */}
-        <StockTicker />
-
-        {/* Right: Live Clock & Action */}
-        <div className="flex items-center gap-3 pl-3">
-          <LiveClock />
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono bg-[#161B26] hover:bg-[#1E2638] text-[#10B981] border border-[#1E2638] rounded transition-colors"
-            title="Refresh Data Feeds"
-          >
-            <RefreshCw className="h-3 w-3" />
-            <span className="hidden sm:inline">REFRESH</span>
-          </button>
-        </div>
-      </header>
-
-      {/* 2. Sub Navigation Bar */}
-      <div className="bg-[#0F121A] border-b border-[#1E2638] px-4 py-1.5 flex items-center justify-between overflow-x-auto">
-        <div className="flex items-center gap-1">
-          {[
-            { id: "terminal", label: "MARKET TERMINAL" },
-            { id: "stocks", label: "ALL EQUITIES" },
-            { id: "correlation", label: "CORRELATION" },
-            { id: "portfolio", label: "PORTFOLIO NAV" },
-            { id: "news", label: "FINANCIAL WIRE" },
-          ].map((tab) => (
+            <LiveClock />
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1 text-xs font-mono rounded transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "bg-[#161B26] text-[#10B981] font-bold border border-[#1E2638] shadow-sm"
-                  : "text-[#64748B] hover:text-[#94A3B8]"
-              }`}
+              type="button"
+              onClick={handleRefresh}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#9ca3af] hover:text-white border border-white/10 transition-colors"
+              title="Refresh Data"
             >
-              {tab.label}
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
             </button>
-          ))}
-        </div>
-
-        {/* Quick Search in Subnav */}
-        <div className="hidden sm:flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-[#64748B]" />
-            <input
-              type="text"
-              placeholder="QUICK TICKER SEARCH..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-7 w-48 pl-8 pr-2 text-xs font-mono bg-[#090A0F] border border-[#1E2638] rounded text-[#E2E8F0] placeholder-[#64748B] focus:outline-none focus:border-[#10B981]"
-            />
           </div>
-        </div>
+        </header>
       </div>
 
-      {/* 3. Main Workspace Container */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Side: Emiten Directory & Watchlist */}
-        <aside className="w-64 border-r border-[#1E2638] bg-[#090A0F] flex flex-col shrink-0 hidden md:flex">
-          <div className="p-3 border-b border-[#1E2638]">
-            <div className="flex items-center justify-between text-[11px] font-mono text-[#64748B] uppercase tracking-wider mb-2">
-              <span>WATCHLIST DIRECTORY</span>
-              <span className="text-[#10B981]">{filteredEmiten.length} SYMBOLS</span>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-[#64748B]" />
-              <input
-                type="text"
-                placeholder="Filter watchlist..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-7 pl-8 pr-2 text-xs font-mono bg-[#0F121A] border border-[#1E2638] rounded text-[#E2E8F0] placeholder-[#64748B] focus:outline-none focus:border-[#10B981]"
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto divide-y divide-[#1E2638]/60">
-            {filteredEmiten.map((emiten) => {
-              const isSelected = activeStock === emiten.ticker
+      {/* 2. Sub Navigation & Filter Bar */}
+      <div className="px-4 lg:px-6 py-2">
+        <div className="glass-panel p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
+            {[
+              { id: "terminal", label: "Market Overview", icon: BarChart3 },
+              { id: "stocks", label: "Equities Directory", icon: Layers },
+              { id: "correlation", label: "Cross-Comparison", icon: PieChart },
+              { id: "portfolio", label: "Portfolio Analytics", icon: TrendingUp },
+              { id: "news", label: "Financial Wire", icon: FileText },
+            ].map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.id
               return (
                 <button
-                  key={emiten.ticker}
-                  type="button"
-                  onClick={() => setActiveStock(emiten.ticker)}
-                  className={`w-full text-left p-2.5 flex items-center justify-between transition-colors font-mono ${
-                    isSelected
-                      ? "bg-[#161B26] border-l-2 border-l-[#10B981] text-white"
-                      : "hover:bg-[#0F121A] text-[#94A3B8]"
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    isActive
+                      ? "bg-white/10 text-white border border-white/15 shadow-sm"
+                      : "text-[#9ca3af] hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <div>
-                    <div className="font-bold text-xs flex items-center gap-1.5">
-                      <span className={isSelected ? "text-[#10B981]" : "text-white"}>
-                        {emiten.ticker}
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-[#64748B] truncate max-w-[130px]">
-                      {emiten.name}
-                    </div>
-                  </div>
-
-                  {isSelected && stockData && (
-                    <div className="text-right">
-                      <div className="text-xs font-semibold tabular-nums text-white">
-                        {formatCurrency(stockData.price)}
-                      </div>
-                      <div
-                        className={`text-[10px] font-bold tabular-nums flex items-center justify-end ${
-                          stockData.changePercent >= 0 ? "text-[#10B981]" : "text-[#EF4444]"
-                        }`}
-                      >
-                        {stockData.changePercent >= 0 ? (
-                          <ArrowUp className="h-2.5 w-2.5 mr-0.5" />
-                        ) : (
-                          <ArrowDown className="h-2.5 w-2.5 mr-0.5" />
-                        )}
-                        {formatPercentage(stockData.changePercent)}
-                      </div>
-                    </div>
-                  )}
+                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#10b981]" : "text-[#9ca3af]"}`} />
+                  <span>{tab.label}</span>
                 </button>
               )
             })}
           </div>
 
-          <div className="p-2 border-t border-[#1E2638] bg-[#0F121A] text-[10px] font-mono text-[#64748B] flex items-center justify-between">
-            <span>FEED: QUOTE_STREAM</span>
-            <span className="text-[#10B981]">OK</span>
-          </div>
-        </aside>
-
-        {/* Center/Right Main Panel */}
-        <main className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#090A0F]">
-          {/* TAB 1: Main Terminal Overview */}
-          {activeTab === "terminal" && (
-            <>
-              {/* High-density Market Overview (Indices, Sectors, FX) */}
-              <MarketOverview />
-
-              {/* Main Active Emiten Chart Panel & Stats */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-                {/* Left 8-col: Interactive Stock Chart */}
-                <div className="lg:col-span-8 bg-[#0F121A] border border-[#1E2638] hover:border-[#2E3A54] rounded p-3 transition-colors flex flex-col">
-                  {/* Emiten Header Strip */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#1E2638]">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 px-2 py-1 rounded font-mono font-bold text-sm">
-                        {activeStock}
-                      </div>
-                      <div>
-                        <div className="text-xs font-mono text-[#64748B]">INDONESIA STOCK EXCHANGE</div>
-                        <div className="text-sm font-bold text-white font-mono">
-                          {initialEmiten.find((e) => e.ticker === activeStock)?.name || activeStock.split(".")[0]}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Big Price Display */}
-                    {stockData ? (
-                      <div className="flex items-baseline gap-2 font-mono">
-                        <span className="text-2xl font-bold text-white tabular-nums">
-                          {formatCurrency(stockData.price)}
-                        </span>
-                        <div
-                          className={`flex items-center text-xs font-bold px-1.5 py-0.5 rounded border ${
-                            stockData.change >= 0
-                              ? "bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30"
-                              : "bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/30"
-                          }`}
-                        >
-                          {stockData.change >= 0 ? (
-                            <ArrowUp className="h-3 w-3 mr-0.5" />
-                          ) : (
-                            <ArrowDown className="h-3 w-3 mr-0.5" />
-                          )}
-                          <span>
-                            {stockData.change >= 0 ? "+" : ""}
-                            {formatCurrency(stockData.change)} ({formatPercentage(stockData.changePercent)})
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-xs font-mono text-[#64748B] animate-pulse">STREAMING PRICE...</div>
-                    )}
-
-                    {/* Period selection */}
-                    <div className="flex items-center gap-1 bg-[#090A0F] p-0.5 rounded border border-[#1E2638]">
-                      {(["daily", "monthly", "yearly"] as const).map((p) => (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => setPeriod(p)}
-                          className={`px-2 py-0.5 text-[11px] font-mono uppercase rounded ${
-                            period === p
-                              ? "bg-[#161B26] text-[#10B981] font-bold border border-[#1E2638]"
-                              : "text-[#64748B] hover:text-[#94A3B8]"
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stock Chart Component */}
-                  <div className="pt-2 flex-1">
-                    <StockChart data={priceData} />
-                  </div>
-                </div>
-
-                {/* Right 4-col: Emiten Metrics & Trading Stats */}
-                <div className="lg:col-span-4 bg-[#0F121A] border border-[#1E2638] hover:border-[#2E3A54] rounded p-3 transition-colors flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between pb-2 border-b border-[#1E2638]">
-                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">
-                        MARKET METRICS
-                      </span>
-                      <span className="font-mono text-[10px] text-[#64748B]">SESSION SUMMARY</span>
-                    </div>
-
-                    {stockData ? (
-                      <div className="divide-y divide-[#1E2638]/70 text-xs font-mono mt-2">
-                        <div className="flex justify-between py-2">
-                          <span className="text-[#64748B]">OPENING PRICE</span>
-                          <span className="text-white tabular-nums font-medium">{formatCurrency(stockData.open)}</span>
-                        </div>
-                        <div className="flex justify-between py-2">
-                          <span className="text-[#64748B]">SESSION HIGH</span>
-                          <span className="text-[#10B981] tabular-nums font-medium">
-                            {formatCurrency(stockData.high)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between py-2">
-                          <span className="text-[#64748B]">SESSION LOW</span>
-                          <span className="text-[#EF4444] tabular-nums font-medium">
-                            {formatCurrency(stockData.low)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between py-2">
-                          <span className="text-[#64748B]">PREVIOUS CLOSE</span>
-                          <span className="text-white tabular-nums font-medium">
-                            {formatCurrency(stockData.price - stockData.change)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between py-2">
-                          <span className="text-[#64748B]">ACCUMULATED VOLUME</span>
-                          <span className="text-white tabular-nums font-bold">
-                            {formatVolume(stockData.volume)} LOTS
-                          </span>
-                        </div>
-                        <div className="flex justify-between py-2">
-                          <span className="text-[#64748B]">SPREAD HIGH/LOW</span>
-                          <span className="text-[#06B6D4] tabular-nums font-medium">
-                            {formatCurrency(stockData.high - stockData.low)}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="py-8 text-center text-xs font-mono text-[#64748B]">
-                        INITIALIZING EMITEN DATA...
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Terminal Action Buttons */}
-                  <div className="pt-3 border-t border-[#1E2638] mt-4 space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        className="py-1.5 font-mono text-xs font-bold text-[#10B981] bg-[#10B981]/15 hover:bg-[#10B981]/25 border border-[#10B981]/40 rounded transition-colors"
-                      >
-                        ORDER BUY
-                      </button>
-                      <button
-                        type="button"
-                        className="py-1.5 font-mono text-xs font-bold text-[#EF4444] bg-[#EF4444]/15 hover:bg-[#EF4444]/25 border border-[#EF4444]/40 rounded transition-colors"
-                      >
-                        ORDER SELL
-                      </button>
-                    </div>
-                    <div className="text-[10px] font-mono text-center text-[#64748B]">
-                      EXECUTION ROUTED VIA DIRECT IDX FIX GATEWAY
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Financial Health Indicators & Fundamental Performance */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-                <div className="lg:col-span-5">
-                  <StockFinancials financialData={financialData} />
-                </div>
-                <div className="lg:col-span-7">
-                  <FinancialChartCard financialData={financialData} />
-                </div>
-              </div>
-
-              {/* Compact Financial News Stream */}
-              <StockNews fullPage={false} />
-            </>
-          )}
-
-          {/* TAB 2: All Equities Grid */}
-          {activeTab === "stocks" && (
-            <div className="bg-[#0F121A] border border-[#1E2638] rounded overflow-hidden">
-              <div className="p-3 border-b border-[#1E2638] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-[#10B981]" />
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">
-                    COMPREHENSIVE IDX EQUITY MATRIX
-                  </span>
-                </div>
-                <span className="font-mono text-[10px] text-[#64748B]">{filteredEmiten.length} LISTED ASSETS</span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs font-mono">
-                  <thead>
-                    <tr className="border-b border-[#1E2638] text-[#64748B] text-left">
-                      <th className="p-3 uppercase">TICKER</th>
-                      <th className="p-3 uppercase">COMPANY NAME</th>
-                      <th className="p-3 uppercase">MARKET</th>
-                      <th className="p-3 text-right uppercase">ACTION</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1E2638]/50">
-                    {filteredEmiten.map((emiten) => (
-                      <tr
-                        key={emiten.ticker}
-                        className="hover:bg-[#161B26]/60 transition-colors cursor-pointer"
-                        onClick={() => {
-                          setActiveStock(emiten.ticker)
-                          setActiveTab("terminal")
-                        }}
-                      >
-                        <td className="p-3 font-bold text-[#10B981]">{emiten.ticker}</td>
-                        <td className="p-3 text-[#E2E8F0]">{emiten.name}</td>
-                        <td className="p-3 text-[#64748B]">IDX MAIN BOARD</td>
-                        <td className="p-3 text-right">
-                          <button
-                            type="button"
-                            className="text-[11px] font-mono text-[#10B981] hover:underline"
-                          >
-                            OPEN TERMINAL &rarr;
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="relative w-full sm:w-56">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#6b7280]" />
+              <input
+                type="text"
+                placeholder="Search symbol..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 w-full pl-8 pr-3 text-xs bg-white/5 border border-white/10 rounded-lg text-white placeholder-[#6b7280] focus:outline-none focus:border-white/20 transition-colors"
+              />
             </div>
-          )}
-
-          {/* TAB 3: Multi-Emiten Correlation */}
-          {activeTab === "correlation" && <StockComparison />}
-
-          {/* TAB 4: Portfolio NAV */}
-          {activeTab === "portfolio" && <PortfolioAnalytics />}
-
-          {/* TAB 5: Full News Wire */}
-          {activeTab === "news" && <StockNews fullPage={true} />}
-        </main>
+          </div>
+        </div>
       </div>
 
-      {/* 4. Terminal Status Bar Footer */}
-      <footer className="h-7 bg-[#090A0F] border-t border-[#1E2638] px-4 flex items-center justify-between text-[11px] font-mono text-[#64748B] select-none">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1 text-[#10B981]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-            DATA ENGINE: ACTIVE
-          </span>
-          <span className="hidden sm:inline">ETL PIPELINE: HOURLY SYNC</span>
-          <span className="hidden md:inline">POSTGRES + DUCKDB STORAGE</span>
-        </div>
+      {/* 3. Main Content Container */}
+      <main className="flex-1 px-4 lg:px-6 pb-6 overflow-y-auto custom-scrollbar">
+        {activeTab === "terminal" && (
+          <div className="space-y-4">
+            {/* Top Stat Row: Active Emiten Highlight */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3.5">
+              {/* Card 1: Active Equity Price */}
+              <div className="glass-panel p-4 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white tracking-tight">{activeStock}</span>
+                    <span className="text-[11px] text-[#9ca3af]">IDX Equity</span>
+                  </div>
+                  <div
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
+                      isProfit
+                        ? "bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/25"
+                        : "bg-[#f43f5e]/15 text-[#f43f5e] border border-[#f43f5e]/25"
+                    }`}
+                  >
+                    {isProfit ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                    <span className="tabular-nums">{stockData ? Math.abs(stockData.changePercent).toFixed(2) : "0.00"}%</span>
+                  </div>
+                </div>
 
-        <div className="flex items-center gap-3">
-          <span>SOURCE: IDX / YAHOO FINANCE</span>
-          <span className="text-[#E2E8F0]">TERMINAL MODE</span>
+                <div className="mt-3">
+                  <div className="text-2xl font-bold font-mono tabular-nums text-white tracking-tight">
+                    {stockData ? formatCurrency(stockData.price) : "Rp 0"}
+                  </div>
+                  <div className="text-[11px] text-[#9ca3af] font-mono tabular-nums mt-0.5">
+                    {isProfit ? "+" : ""}
+                    {stockData ? formatCurrency(stockData.change) : "Rp 0"} today
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Range Today (High / Low) */}
+              <div className="glass-panel p-4 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-[#9ca3af]">Day Range (L / H)</span>
+                  <span className="text-[11px] font-mono text-[#6b7280]">Spread</span>
+                </div>
+                <div className="mt-3">
+                  <div className="flex items-baseline justify-between text-sm font-mono tabular-nums">
+                    <span className="text-[#9ca3af]">L: {stockData ? formatCurrency(stockData.low) : "-"}</span>
+                    <span className="text-white font-medium">H: {stockData ? formatCurrency(stockData.high) : "-"}</span>
+                  </div>
+                  <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mt-2">
+                    <div
+                      className="bg-[#3b82f6] h-full rounded-full"
+                      style={{
+                        width: stockData && stockData.high > stockData.low
+                          ? `${Math.min(100, Math.max(0, ((stockData.price - stockData.low) / (stockData.high - stockData.low)) * 100))}%`
+                          : "50%",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Volume Ingestion */}
+              <div className="glass-panel p-4 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-[#9ca3af]">Volume Transacted</span>
+                  <span className="text-[11px] font-mono text-[#6b7280]">Shares</span>
+                </div>
+                <div className="mt-3">
+                  <div className="text-2xl font-bold font-mono tabular-nums text-white tracking-tight">
+                    {stockData ? formatNumber(stockData.volume) : "0"}
+                  </div>
+                  <div className="text-[11px] text-[#9ca3af] mt-0.5">Continuous market volume</div>
+                </div>
+              </div>
+
+              {/* Card 4: Quick Symbol Switcher */}
+              <div className="glass-panel p-3 flex flex-col justify-between">
+                <span className="text-xs font-medium text-[#9ca3af] mb-1.5">Quick Watchlist</span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {emitenList.slice(0, 6).map((item) => (
+                    <button
+                      key={item.ticker}
+                      onClick={() => setActiveStock(item.ticker)}
+                      className={`px-2 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+                        activeStock === item.ticker
+                          ? "bg-white/15 text-white border border-white/20 shadow-sm"
+                          : "bg-white/5 text-[#9ca3af] hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      {item.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Middle: Chart Workspace & Emiten Selector */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="lg:col-span-3 glass-panel p-4 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/8">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white tracking-tight">
+                      Price Movement & Volume Telemetry
+                    </h3>
+                    <p className="text-[11px] text-[#9ca3af]">
+                      Historical market quotes aggregated via Big Data Pipeline
+                    </p>
+                  </div>
+
+                  {/* Period Switcher */}
+                  <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10 self-start sm:self-auto">
+                    {["1m", "3m", "6m", "1y", "all"].map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPeriod(p)}
+                        className={`px-2.5 py-1 rounded text-xs font-mono uppercase transition-all ${
+                          period === p
+                            ? "bg-white/15 text-white font-bold shadow-sm"
+                            : "text-[#9ca3af] hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stock Chart Component */}
+                <div className="min-h-[380px]">
+                  <StockChart data={priceData} />
+                </div>
+              </div>
+
+              {/* Right Column: Key Financial Metrics & Ratios */}
+              <div className="lg:col-span-1 glass-panel p-4 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xs font-semibold text-white tracking-tight pb-2 border-b border-white/8">
+                    Financial Valuation
+                  </h3>
+                  <div className="divide-y divide-white/5 text-xs font-mono">
+                    <div className="py-2.5 flex justify-between">
+                      <span className="text-[#9ca3af]">Open</span>
+                      <span className="text-white tabular-nums">{stockData ? formatCurrency(stockData.open) : "-"}</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between">
+                      <span className="text-[#9ca3af]">Prev Close</span>
+                      <span className="text-white tabular-nums">
+                        {stockData ? formatCurrency(stockData.price - stockData.change) : "-"}
+                      </span>
+                    </div>
+                    <div className="py-2.5 flex justify-between">
+                      <span className="text-[#9ca3af]">High</span>
+                      <span className="text-white tabular-nums">{stockData ? formatCurrency(stockData.high) : "-"}</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between">
+                      <span className="text-[#9ca3af]">Low</span>
+                      <span className="text-white tabular-nums">{stockData ? formatCurrency(stockData.low) : "-"}</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between">
+                      <span className="text-[#9ca3af]">Exchange</span>
+                      <span className="text-[#10b981]">IDX (Indonesia)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-white/8">
+                  <span className="text-[11px] text-[#6b7280]">Data updated daily from official IDX ingestion</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row: Financial Statements & Market Overview */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="glass-panel p-4">
+                <StockFinancials financialData={financialData} />
+              </div>
+              <div className="glass-panel p-4">
+                <FinancialChartCard financialData={financialData} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "stocks" && (
+          <div className="glass-panel p-4">
+            <MarketOverview />
+          </div>
+        )}
+
+        {activeTab === "correlation" && (
+          <div className="glass-panel p-4">
+            <StockComparison />
+          </div>
+        )}
+
+        {activeTab === "portfolio" && (
+          <div className="glass-panel p-4">
+            <PortfolioAnalytics />
+          </div>
+        )}
+
+        {activeTab === "news" && (
+          <div className="glass-panel p-4">
+            <StockNews />
+          </div>
+        )}
+      </main>
+
+      {/* Footer Minimal Row */}
+      <footer className="px-6 py-3 border-t border-white/8 text-[11px] text-[#6b7280] flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div>
+          <span className="text-[#9ca3af] font-medium">IDX Analytics Intelligence</span> · Clean Financial Materiality
+        </div>
+        <div className="font-mono text-[10.5px]">
+          Pipeline Status: <span className="text-[#10b981]">Active</span> · Updated Automatically
         </div>
       </footer>
     </div>
