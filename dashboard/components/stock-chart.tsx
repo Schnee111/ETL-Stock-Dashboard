@@ -27,25 +27,25 @@ interface PriceChartProps {
   data: PriceData[]
 }
 
-const TerminalTooltip = ({ active, payload, label }: any) => {
+const CleanChartTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
-    const isUp = (data.Close ?? 0) >= (data.Open ?? 0)
     const diff = (data.Close ?? 0) - (data.Open ?? 0)
     const diffPct = data.Open ? (diff / data.Open) * 100 : 0
+    const isUp = diff >= 0
 
     return (
-      <div className="bg-[#0F121A] p-3 border border-[#2E3A54] rounded shadow-2xl font-mono text-xs text-[#E2E8F0] min-w-[210px]">
-        <div className="flex items-center justify-between border-b border-[#1E2638] pb-1.5 mb-2">
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-[#10B981]">{data.Symbol}</span>
-            <span className="text-[10px] text-[#64748B]">{data.Date}</span>
+      <div className="glass-panel p-3 border border-white/10 rounded-xl shadow-2xl font-sans text-xs text-[#f4f5f8] min-w-[190px] max-w-[240px] pointer-events-none">
+        <div className="flex items-center justify-between border-b border-white/8 pb-2 mb-2">
+          <div className="flex flex-col">
+            <span className="font-bold text-white text-xs">{data.Symbol}</span>
+            <span className="text-[10px] text-[#9ca3af] font-mono">{data.Date}</span>
           </div>
           <span
-            className={`text-[10px] px-1 py-0.5 rounded font-mono ${
+            className={`text-[11px] px-1.5 py-0.5 rounded font-mono font-medium ${
               isUp
-                ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30"
-                : "bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30"
+                ? "bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/25"
+                : "bg-[#f43f5e]/15 text-[#f43f5e] border border-[#f43f5e]/25"
             }`}
           >
             {diff >= 0 ? "+" : ""}
@@ -53,28 +53,28 @@ const TerminalTooltip = ({ active, payload, label }: any) => {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] tabular-nums">
-          <div className="flex justify-between text-[#94A3B8]">
-            <span>OPEN</span>
-            <span className="text-white font-medium">Rp {Number(data.Open).toLocaleString("id-ID")}</span>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] font-mono tabular-nums">
+          <div className="flex justify-between">
+            <span className="text-[#9ca3af]">Open</span>
+            <span className="text-white">Rp {Number(data.Open).toLocaleString("id-ID")}</span>
           </div>
-          <div className="flex justify-between text-[#94A3B8]">
-            <span>HIGH</span>
-            <span className="text-[#10B981] font-medium">Rp {Number(data.High).toLocaleString("id-ID")}</span>
+          <div className="flex justify-between">
+            <span className="text-[#9ca3af]">Close</span>
+            <span className="text-white font-semibold">Rp {Number(data.Close).toLocaleString("id-ID")}</span>
           </div>
-          <div className="flex justify-between text-[#94A3B8]">
-            <span>LOW</span>
-            <span className="text-[#EF4444] font-medium">Rp {Number(data.Low).toLocaleString("id-ID")}</span>
+          <div className="flex justify-between">
+            <span className="text-[#9ca3af]">High</span>
+            <span className="text-[#10b981]">Rp {Number(data.High).toLocaleString("id-ID")}</span>
           </div>
-          <div className="flex justify-between text-[#94A3B8]">
-            <span>CLOSE</span>
-            <span className="text-white font-bold">Rp {Number(data.Close).toLocaleString("id-ID")}</span>
+          <div className="flex justify-between">
+            <span className="text-[#9ca3af]">Low</span>
+            <span className="text-[#f43f5e]">Rp {Number(data.Low).toLocaleString("id-ID")}</span>
           </div>
         </div>
 
-        <div className="mt-2 pt-1.5 border-t border-[#1E2638] flex justify-between items-center text-[10px] text-[#64748B]">
-          <span>VOL</span>
-          <span className="font-mono tabular-nums text-[#94A3B8]">
+        <div className="mt-2 pt-1.5 border-t border-white/8 flex justify-between items-center text-[10px] text-[#9ca3af]">
+          <span>Volume</span>
+          <span className="font-mono tabular-nums text-white">
             {Number(data.Volume).toLocaleString("id-ID")}
           </span>
         </div>
@@ -85,8 +85,7 @@ const TerminalTooltip = ({ active, payload, label }: any) => {
 }
 
 export default function StockChart({ data }: PriceChartProps) {
-  const [activeMetric, setActiveMetric] = useState<"Close" | "Open" | "High" | "Low">("Close")
-  const [selectedRange, setSelectedRange] = useState<string>("all")
+  const [activeMetric] = useState<"Close" | "Open" | "High" | "Low">("Close")
   const [chartType, setChartType] = useState<"area" | "line">("area")
 
   // Ensure dates are sorted chronologically
@@ -94,218 +93,143 @@ export default function StockChart({ data }: PriceChartProps) {
     return [...data].sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime())
   }, [data])
 
-  // Filter data based on selected range
-  const formattedData = useMemo(() => {
-    if (!sortedData.length || selectedRange === "all") return sortedData
-
-    const endDate = new Date(sortedData[sortedData.length - 1].Date)
-    const startDate = new Date(endDate)
-
-    switch (selectedRange) {
-      case "5d":
-        startDate.setDate(endDate.getDate() - 5)
-        break
-      case "1mo":
-        startDate.setMonth(endDate.getMonth() - 1)
-        break
-      case "6mo":
-        startDate.setMonth(endDate.getMonth() - 6)
-        break
-      case "1y":
-        startDate.setFullYear(endDate.getFullYear() - 1)
-        break
-      case "3y":
-        startDate.setFullYear(endDate.getFullYear() - 3)
-        break
-    }
-
-    return sortedData.filter((item) => new Date(item.Date) >= startDate)
-  }, [sortedData, selectedRange])
-
-  // Min and max bounds
   const { minValue, maxValue, maxVolume } = useMemo(() => {
-    if (!formattedData.length) {
-      return { minValue: 0, maxValue: 100, maxVolume: 1000 }
-    }
-    const vals = formattedData.map((d) => d[activeMetric] || d.Close)
-    const min = Math.min(...vals)
-    const max = Math.max(...vals)
-    const pad = (max - min) * 0.08 || min * 0.05
-    const vols = formattedData.map((d) => d.Volume || 0)
+    if (!sortedData.length) return { minValue: 0, maxValue: 100, maxVolume: 1000 }
+    let min = Infinity
+    let max = -Infinity
+    let maxVol = 0
+
+    sortedData.forEach((d) => {
+      const val = d[activeMetric] ?? 0
+      if (val < min) min = val
+      if (val > max) max = val
+      if (d.Volume > maxVol) maxVol = d.Volume
+    })
+
+    const padding = (max - min) * 0.08 || 10
     return {
-      minValue: Math.max(0, Math.floor(min - pad)),
-      maxValue: Math.ceil(max + pad),
-      maxVolume: Math.max(...vols) * 4, // 4x factor keeps volume bars in bottom quarter
+      minValue: Math.max(0, Math.floor(min - padding)),
+      maxValue: Math.ceil(max + padding),
+      maxVolume: maxVol || 1000,
     }
-  }, [formattedData, activeMetric])
+  }, [sortedData, activeMetric])
 
-  const ranges = [
-    { label: "5D", value: "5d" },
-    { label: "1M", value: "1mo" },
-    { label: "6M", value: "6mo" },
-    { label: "1Y", value: "1y" },
-    { label: "3Y", value: "3y" },
-    { label: "ALL", value: "all" },
-  ]
+  const isNetPositive = useMemo(() => {
+    if (sortedData.length < 2) return true
+    return sortedData[sortedData.length - 1].Close >= sortedData[0].Close
+  }, [sortedData])
 
-  const metrics: Array<{ key: "Close" | "Open" | "High" | "Low"; label: string; color: string }> = [
-    { key: "Close", label: "CLOSE", color: "#10B981" },
-    { key: "Open", label: "OPEN", color: "#06B6D4" },
-    { key: "High", label: "HIGH", color: "#3B82F6" },
-    { key: "Low", label: "LOW", color: "#EF4444" },
-  ]
+  const strokeColor = isNetPositive ? "#10b981" : "#f43f5e"
 
   return (
     <div className="w-full flex flex-col">
-      {/* Top Chart Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-2 border-b border-[#1E2638]">
-        {/* Metric Toggles */}
-        <div className="flex items-center gap-1 bg-[#090A0F] p-0.5 rounded border border-[#1E2638]">
-          {metrics.map((m) => {
-            const active = activeMetric === m.key
-            return (
-              <button
-                key={m.key}
-                type="button"
-                onClick={() => setActiveMetric(m.key)}
-                className={`px-2 py-0.5 text-[11px] font-mono tracking-wider rounded transition-colors ${
-                  active
-                    ? "bg-[#161B26] text-white font-semibold border border-[#2E3A54] shadow-sm"
-                    : "text-[#64748B] hover:text-[#94A3B8]"
-                }`}
-              >
-                {m.label}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Chart Style Switcher */}
-          <div className="flex items-center bg-[#090A0F] p-0.5 rounded border border-[#1E2638]">
+      {/* Chart Controls Bar */}
+      <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/8 text-xs">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-[#9ca3af] font-medium hidden sm:inline">Display:</span>
+          <div className="inline-flex rounded-lg bg-white/5 p-0.5 border border-white/8">
             <button
               type="button"
               onClick={() => setChartType("area")}
-              className={`px-2 py-0.5 text-[11px] font-mono rounded ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
                 chartType === "area"
-                  ? "bg-[#161B26] text-[#10B981] font-semibold border border-[#1E2638]"
-                  : "text-[#64748B] hover:text-[#94A3B8]"
+                  ? "bg-white/15 text-white shadow-sm"
+                  : "text-[#9ca3af] hover:text-white"
               }`}
             >
-              AREA
+              Area
             </button>
             <button
               type="button"
               onClick={() => setChartType("line")}
-              className={`px-2 py-0.5 text-[11px] font-mono rounded ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
                 chartType === "line"
-                  ? "bg-[#161B26] text-[#10B981] font-semibold border border-[#1E2638]"
-                  : "text-[#64748B] hover:text-[#94A3B8]"
+                  ? "bg-white/15 text-white shadow-sm"
+                  : "text-[#9ca3af] hover:text-white"
               }`}
             >
-              LINE
+              Line
             </button>
           </div>
+        </div>
 
-          {/* Timeframe selector */}
-          <div className="flex items-center gap-0.5 bg-[#090A0F] p-0.5 rounded border border-[#1E2638]">
-            {ranges.map((range) => {
-              const active = selectedRange === range.value
-              return (
-                <button
-                  key={range.value}
-                  type="button"
-                  onClick={() => setSelectedRange(range.value)}
-                  className={`px-2 py-0.5 text-[11px] font-mono rounded transition-colors ${
-                    active
-                      ? "bg-[#10B981] text-[#090A0F] font-bold"
-                      : "text-[#64748B] hover:text-[#E2E8F0]"
-                  }`}
-                >
-                  {range.label}
-                </button>
-              )
-            })}
-          </div>
+        <div className="flex items-center gap-2 text-[11px] font-mono text-[#9ca3af]">
+          <span className="hidden sm:inline">Range:</span>
+          <span className="tabular-nums text-white">
+            Rp {minValue.toLocaleString("id-ID")} - Rp {maxValue.toLocaleString("id-ID")}
+          </span>
         </div>
       </div>
 
-      {/* Main Chart Canvas */}
-      <div className="h-[360px] w-full relative">
-        {formattedData.length > 0 ? (
+      {/* Main Chart SVG Canvas */}
+      <div className="h-[240px] sm:h-[320px] md:h-[360px] w-full relative">
+        {sortedData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={formattedData}
-              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+              data={sortedData}
+              margin={{ top: 8, right: 0, left: -16, bottom: 0 }}
             >
               <defs>
-                <linearGradient id="terminalEmeraldGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10B981" stopOpacity={0.25} />
-                  <stop offset="90%" stopColor="#10B981" stopOpacity={0.0} />
-                </linearGradient>
-                <linearGradient id="terminalCyanGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06B6D4" stopOpacity={0.25} />
-                  <stop offset="90%" stopColor="#06B6D4" stopOpacity={0.0} />
+                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={strokeColor} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={strokeColor} stopOpacity={0.0} />
                 </linearGradient>
               </defs>
 
               <CartesianGrid
-                strokeDasharray="2 3"
-                stroke="#1E2638"
+                strokeDasharray="3 3"
+                stroke="rgba(255, 255, 255, 0.05)"
                 vertical={false}
               />
 
               <XAxis
                 dataKey="Date"
-                stroke="#475569"
-                tick={{ fontSize: 10, fill: "#64748B", fontFamily: "monospace" }}
+                stroke="transparent"
+                tick={{ fontSize: 10, fill: "#6b7280", fontFamily: "var(--font-jetbrains), monospace" }}
                 tickFormatter={(val: string) => {
                   if (!val) return ""
                   const d = new Date(val)
                   if (isNaN(d.getTime())) return val
-                  if (selectedRange === "5d") return `${d.getDate()}/${d.getMonth() + 1}`
-                  if (selectedRange === "1mo" || selectedRange === "6mo")
-                    return `${d.getDate()} ${d.toLocaleString("en", { month: "short" })}`
-                  if (selectedRange === "1y")
-                    return `${d.toLocaleString("en", { month: "short" })} '${d.getFullYear().toString().slice(-2)}`
-                  return `${d.getFullYear()}`
+                  return `${d.getDate()}/${d.getMonth() + 1}`
                 }}
-                minTickGap={45}
-                axisLine={{ stroke: "#1E2638" }}
+                minTickGap={35}
+                axisLine={false}
                 tickLine={false}
               />
 
               <YAxis
                 yAxisId="price"
                 domain={[minValue, maxValue]}
-                stroke="#475569"
                 orientation="right"
-                tick={{ fontSize: 10, fill: "#64748B", fontFamily: "monospace" }}
-                tickFormatter={(val) => Number(val).toLocaleString("id-ID")}
+                tick={{ fontSize: 10, fill: "#6b7280", fontFamily: "var(--font-jetbrains), monospace" }}
+                tickFormatter={(val) => {
+                  if (val >= 1000) return `${(val / 1000).toFixed(1)}k`
+                  return `${val}`
+                }}
                 axisLine={false}
                 tickLine={false}
-                width={56}
+                width={38}
               />
 
               <YAxis
                 yAxisId="volume"
-                domain={[0, maxVolume]}
+                domain={[0, maxVolume * 3.5]}
                 orientation="left"
                 hide
               />
 
               <Tooltip
-                content={<TerminalTooltip />}
-                cursor={{ stroke: "#2E3A54", strokeWidth: 1, strokeDasharray: "3 3" }}
+                content={<CleanChartTooltip />}
+                cursor={{ stroke: "rgba(255, 255, 255, 0.15)", strokeWidth: 1, strokeDasharray: "2 2" }}
               />
 
-              {/* Underlying Volume Bars in bottom section */}
+              {/* Underlying Volume Histogram */}
               <Bar
                 yAxisId="volume"
                 dataKey="Volume"
-                fill="#1E2638"
-                opacity={0.65}
-                maxBarSize={8}
+                fill="rgba(255, 255, 255, 0.08)"
+                maxBarSize={6}
+                radius={[2, 2, 0, 0]}
                 isAnimationActive={false}
               />
 
@@ -315,42 +239,42 @@ export default function StockChart({ data }: PriceChartProps) {
                   yAxisId="price"
                   type="monotone"
                   dataKey={activeMetric}
-                  stroke="#10B981"
-                  strokeWidth={1.75}
-                  fill="url(#terminalEmeraldGradient)"
+                  stroke={strokeColor}
+                  strokeWidth={2}
+                  fill="url(#chartGradient)"
                   dot={false}
-                  activeDot={{ r: 4, fill: "#10B981", stroke: "#090A0F", strokeWidth: 2 }}
+                  activeDot={{ r: 4, fill: strokeColor, stroke: "#0d0f14", strokeWidth: 2 }}
                 />
               ) : (
                 <Line
                   yAxisId="price"
                   type="monotone"
                   dataKey={activeMetric}
-                  stroke="#10B981"
-                  strokeWidth={1.75}
+                  stroke={strokeColor}
+                  strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 4, fill: "#10B981", stroke: "#090A0F", strokeWidth: 2 }}
+                  activeDot={{ r: 4, fill: strokeColor, stroke: "#0d0f14", strokeWidth: 2 }}
                 />
               )}
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-full items-center justify-center font-mono text-xs text-[#64748B]">
-            DATA FEED EMPTY / CONNECTING
+          <div className="flex h-full items-center justify-center font-mono text-xs text-[#6b7280]">
+            Connecting to real-time market stream...
           </div>
         )}
       </div>
 
-      {/* Monospace Sub-strip Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-[#1E2638] text-[10px] font-mono text-[#64748B] tabular-nums">
-        <div className="flex items-center gap-3">
-          <span>HIGH 52W: <strong className="text-[#94A3B8]">Rp {maxValue.toLocaleString("id-ID")}</strong></span>
-          <span>LOW 52W: <strong className="text-[#94A3B8]">Rp {minValue.toLocaleString("id-ID")}</strong></span>
-          <span>VOL (AVG): <strong className="text-[#94A3B8]">{(maxVolume / 4).toLocaleString("id-ID")}</strong></span>
+      {/* Sub-strip Footer */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 mt-1 border-t border-white/8 text-[11px] font-mono text-[#9ca3af] tabular-nums">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+          <span>52W High: <strong className="text-white">Rp {maxValue.toLocaleString("id-ID")}</strong></span>
+          <span>52W Low: <strong className="text-white">Rp {minValue.toLocaleString("id-ID")}</strong></span>
+          <span className="hidden sm:inline">Avg Vol: <strong className="text-white">{(maxVolume / 4).toLocaleString("id-ID")}</strong></span>
         </div>
-        <div className="flex items-center gap-1.5 text-[#10B981]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
-          <span>REALTIME FEED</span>
+        <div className="flex items-center gap-1.5 text-[#10b981]">
+          <span className="emerald-pip" />
+          <span className="text-[10px] font-semibold tracking-wider">LIVE FEED</span>
         </div>
       </div>
     </div>

@@ -10,7 +10,7 @@ export default function StockNews({ fullPage = false }: StockNewsProps) {
     {
       id: "1",
       title: "Bank Indonesia Pertahankan BI-Rate di Level 5,75% untuk Stabilitas Kurs Rupiah",
-      source: "CNBC IDX WIRE",
+      source: "CNBC IDX",
       time: "14:25 WIB",
       tags: ["BBRI", "BBCA", "BMRI"],
       snippet:
@@ -19,7 +19,7 @@ export default function StockNews({ fullPage = false }: StockNewsProps) {
     {
       id: "2",
       title: "Telkom Indonesia (TLKM) Genjot Capex Infrastruktur Digital & 5G di 10 Titik Baru",
-      source: "INVESTOR WIRE",
+      source: "INVESTOR DAILY",
       time: "13:10 WIB",
       tags: ["TLKM"],
       snippet:
@@ -37,55 +37,46 @@ export default function StockNews({ fullPage = false }: StockNewsProps) {
     {
       id: "4",
       title: "Kinerja Konsolidasi BUMN Perbankan: Arus Dana Asing Mengalir ke BBRI dan BMRI",
-      source: "REUTERS FEED",
+      source: "REUTERS",
       time: "09:30 WIB",
       tags: ["BBRI", "BMRI"],
       snippet:
         "Investor institusional asing mencatatkan net buy solid di emiten big caps perbankan IDX di tengah rilis laporan keuangan kuartalan yang melampaui estimasi konsensus.",
-    },
-    {
-      id: "5",
-      title: "Permintaan Nikel & Tembaga Global Angkat Volume Perdagangan Emiten Metal IDX",
-      source: "MARKET WATCH",
-      time: "08:15 WIB",
-      tags: ["ANTM", "MDKA"],
-      snippet:
-        "Kenaikan harga komoditas logam dasar di London Metal Exchange memberikan katalis penguatan margin terhadap produsen nikel dan emas domestik.",
     },
   ]
 
   const itemsToRender = fullPage ? newsItems : newsItems.slice(0, 4)
 
   return (
-    <div className="bg-[#0F121A] border border-[#1E2638] hover:border-[#2E3A54] rounded transition-colors flex flex-col">
-      <div className="flex items-center justify-between p-3 border-b border-[#1E2638]">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/8">
         <div className="flex items-center gap-2">
-          <Newspaper className="h-4 w-4 text-[#10B981]" />
-          <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">
-            FINANCIAL WIRE & LIVE DISPATCH
+          <Newspaper className="h-4 w-4 text-[#10b981]" />
+          <h3 className="text-xs font-semibold text-white tracking-tight">
+            Financial Wire & Disclosures
           </h3>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
-          <span className="font-mono text-[10px] text-[#10B981] uppercase font-semibold">FEED LIVE</span>
+        <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#10b981]">
+          <span className="emerald-pip" />
+          <span className="text-[10px] font-semibold">STREAM ACTIVE</span>
         </div>
       </div>
 
-      <div className="p-3 divide-y divide-[#1E2638]/70">
+      <div className="divide-y divide-white/5 overflow-y-auto max-h-[360px] custom-scrollbar pr-1">
         {itemsToRender.map((news) => (
           <div key={news.id} className="py-2.5 first:pt-0 last:pb-0 group">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-mono text-[#10B981] bg-[#10B981]/10 px-1.5 py-0.5 rounded border border-[#10B981]/20">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9.5px] font-mono font-medium text-[#10b981] bg-[#10b981]/10 px-1.5 py-0.5 rounded border border-[#10b981]/20">
                   {news.source}
                 </span>
-                <span className="text-[10px] font-mono text-[#64748B]">{news.time}</span>
+                <span className="text-[10px] font-mono text-[#6b7280]">{news.time}</span>
               </div>
               <div className="flex gap-1">
                 {news.tags.map((t) => (
                   <span
                     key={t}
-                    className="text-[9px] font-mono bg-[#161B26] text-[#94A3B8] border border-[#1E2638] px-1 py-0.5 rounded"
+                    className="text-[9px] font-mono bg-white/5 text-[#9ca3af] border border-white/10 px-1 py-0.5 rounded"
                   >
                     {t}
                   </span>
@@ -93,28 +84,27 @@ export default function StockNews({ fullPage = false }: StockNewsProps) {
               </div>
             </div>
 
-            <Link href={`/berita/${news.id}`} className="block group">
-              <h4 className="font-medium text-xs text-[#E2E8F0] group-hover:text-[#10B981] transition-colors leading-snug">
+            <Link href="/berita" className="block group">
+              <h4 className="font-medium text-xs text-[#f4f5f8] group-hover:text-[#10b981] transition-colors leading-snug">
                 {news.title}
               </h4>
             </Link>
 
-            {fullPage && (
-              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
-                {news.snippet}
-              </p>
-            )}
+            <p className="text-[11px] text-[#9ca3af] mt-1 line-clamp-2 leading-relaxed">
+              {news.snippet}
+            </p>
           </div>
         ))}
       </div>
 
       {!fullPage && (
-        <div className="p-2 border-t border-[#1E2638] bg-[#090A0F]/60 text-center">
+        <div className="pt-2.5 mt-2 border-t border-white/8 text-center">
           <Link
             href="/berita"
-            className="text-[11px] font-mono text-[#64748B] hover:text-[#10B981] inline-flex items-center gap-1 transition-colors"
+            className="text-[11px] font-mono text-[#9ca3af] hover:text-[#10b981] inline-flex items-center gap-1 transition-colors"
           >
-            VIEW ALL MARKET HEADLINES <ExternalLink className="h-3 w-3" />
+            <span>All Corporate Disclosures</span>
+            <ExternalLink className="h-3 w-3" />
           </Link>
         </div>
       )}
