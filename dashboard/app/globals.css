@@ -4,79 +4,75 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Pro Financial Terminal Theme (Dark by default) */
+    --background: 228 26% 4%;        /* #090A0F Void Obsidian */
+    --foreground: 215 20% 92%;        /* High contrast light text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 223 28% 8%;              /* #0F121A Card Deep Slate */
+    --card-foreground: 215 20% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 223 28% 8%;           /* #0F121A */
+    --popover-foreground: 215 20% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 160 84% 39%;          /* #10B981 Terminal Emerald */
+    --primary-foreground: 228 26% 4%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 221 27% 12%;        /* #161B26 Elevated Card */
+    --secondary-foreground: 215 20% 90%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 221 27% 12%;            /* #161B26 */
+    --muted-foreground: 215 16% 60%;  /* #8899A6 */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 160 84% 39%;           /* #10B981 */
+    --accent-foreground: 228 26% 4%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;        /* #EF4444 Crimson Loss */
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 221 30% 17%;           /* #1E2638 Subtle Hairline */
+    --input: 221 30% 17%;            /* #1E2638 */
+    --ring: 160 84% 39%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
 
-    /* Custom colors for the app */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    /* Terminal Palette Tokens */
+    --terminal-void: #090A0F;
+    --terminal-card: #0F121A;
+    --terminal-elevated: #161B26;
+    --terminal-border: #1E2638;
+    --terminal-border-hover: #2E3A54;
+    --terminal-profit: #10B981;
+    --terminal-loss: #EF4444;
+    --terminal-cyan: #06B6D4;
+    --terminal-amber: #F59E0B;
+
+    --sidebar-background: 228 26% 4%;
+    --sidebar-foreground: 215 20% 90%;
+    --sidebar-border: 221 30% 17%;
+    --sidebar-accent: 221 27% 12%;
+    --sidebar-accent-foreground: 215 20% 98%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 6.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 6.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 20.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 20.5%;
-    --muted-foreground: 215 20.2% 75.1%;
-
-    --accent: 217.2 32.6% 20.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 40.6%;
+    --background: 228 26% 4%;
+    --foreground: 215 20% 92%;
+    --card: 223 28% 8%;
+    --card-foreground: 215 20% 95%;
+    --popover: 223 28% 8%;
+    --popover-foreground: 215 20% 95%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 228 26% 4%;
+    --secondary: 221 27% 12%;
+    --secondary-foreground: 215 20% 90%;
+    --muted: 221 27% 12%;
+    --muted-foreground: 215 16% 60%;
+    --accent: 160 84% 39%;
+    --accent-foreground: 228 26% 4%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 25.5%;
-    --input: 217.2 32.6% 25.5%;
-    --ring: 212.7 26.8% 83.9%;
-
-    /* Custom colors for the app in dark mode */
-    --sidebar-background: 222.2 84% 6.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 25.5%;
-    --sidebar-accent: 217.2 32.6% 25.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
+    --border: 221 30% 17%;
+    --input: 221 30% 17%;
+    --ring: 160 84% 39%;
   }
 }
 
@@ -85,28 +81,66 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+}
+
+/* Tabular numbers for financial metrics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hairline border utility */
+.border-hairline {
+  border-width: 1px;
+  border-color: #1E2638;
+}
+
+.border-hairline-b {
+  border-bottom-width: 1px;
+  border-bottom-color: #1E2638;
+}
+
+.border-hairline-t {
+  border-top-width: 1px;
+  border-top-color: #1E2638;
+}
+
+.border-hairline-r {
+  border-right-width: 1px;
+  border-right-color: #1E2638;
+}
+
+.border-hairline-l {
+  border-left-width: 1px;
+  border-left-color: #1E2638;
 }
 
 /* Stock Ticker Animation */
 .ticker-wrap {
   width: 100%;
   overflow: hidden;
-  height: 2.5rem;
-  padding: 0.5rem 0;
+  height: 2rem;
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
 }
 
 .ticker {
   display: inline-flex;
   white-space: nowrap;
-  animation: ticker 30s linear infinite;
+  animation: ticker 35s linear infinite;
+}
+
+.ticker:hover {
+  animation-play-state: paused;
 }
 
 .ticker-item {
   display: flex;
   align-items: center;
-  padding: 0 1rem;
+  padding: 0 0.85rem;
 }
 
 @keyframes ticker {
@@ -118,186 +152,58 @@
   }
 }
 
-/* Card Hover Effects */
-.card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+/* Pro Terminal Grid lines and subtle hover effects */
+.terminal-card {
+  background-color: #0F121A;
+  border: 1px solid #1E2638;
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease;
 }
 
-.card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.1), 0 8px 10px -6px rgba(30, 58, 138, 0.05);
+.terminal-card:hover {
+  border-color: #2E3A54;
 }
 
-.dark .card-hover:hover {
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+.terminal-elevated {
+  background-color: #161B26;
+  border: 1px solid #1E2638;
 }
 
-/* Gradient Animations */
-.gradient-border {
+/* Micro Status Indicator Dot */
+.status-dot-pulse {
   position: relative;
-  border-radius: 0.5rem;
-  overflow: hidden;
 }
-
-.gradient-border::before {
+.status-dot-pulse::after {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: 0.5rem;
-  padding: 2px;
-  background: linear-gradient(45deg, #1e3a8a, #10b981);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 9999px;
+  background-color: inherit;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
-/* Pulse Animation */
-.pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* Fade In Animation */
-.fade-in {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  0% {
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
     opacity: 0;
   }
-  100% {
-    opacity: 1;
-  }
 }
 
-/* Slide Up Animation */
-.slide-up {
-  animation: slideUp 0.5s ease-out;
+/* Scrollbar styles for dense data terminals */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
 }
-
-@keyframes slideUp {
-  0% {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
+::-webkit-scrollbar-track {
+  background: #090A0F;
 }
-
-/* Improve table visibility in dark mode */
-.dark .bg-white\/80 {
-  background-color: hsl(222.2 84% 6.9% / 0.95) !important;
+::-webkit-scrollbar-thumb {
+  background: #1E2638;
+  border-radius: 2px;
 }
-
-.dark .bg-secondary\/20 {
-  background-color: hsl(217.2 32.6% 20.5% / 0.7) !important;
-}
-
-.dark .bg-secondary\/30 {
-  background-color: hsl(217.2 32.6% 25.5% / 0.8) !important;
-}
-
-.dark .bg-muted\/20 {
-  background-color: hsl(217.2 32.6% 25.5% / 0.7) !important;
-}
-
-.dark .bg-muted\/30 {
-  background-color: hsl(217.2 32.6% 30.5% / 0.8) !important;
-}
-
-.dark .bg-background\/80 {
-  background-color: hsl(222.2 84% 6.9% / 0.95) !important;
-}
-
-/* Improve text contrast in dark mode */
-.dark .text-muted-foreground {
-  color: hsl(215 20.2% 75.1%) !important;
-}
-
-/* Improve border visibility in dark mode */
-.dark .border-secondary\/20 {
-  border-color: hsl(217.2 32.6% 30.5% / 0.5) !important;
-}
-
-.dark .border-secondary\/10 {
-  border-color: hsl(217.2 32.6% 30.5% / 0.3) !important;
-}
-
-/* Improve chart visibility in dark mode */
-.dark .recharts-cartesian-grid line[stroke="#ccc"] {
-  stroke: hsl(217.2 32.6% 40.5% / 0.5) !important;
-}
-
-.dark .recharts-cartesian-axis-tick text {
-  fill: hsl(215 20.2% 75.1%) !important;
-}
-
-/* Improve table text contrast */
-.dark table {
-  color: hsl(210 40% 98%) !important;
-}
-
-.dark table th {
-  color: hsl(210 40% 98%) !important;
-  background-color: hsl(222.2 84% 8.9%) !important;
-}
-
-.dark table td {
-  color: hsl(210 40% 98%) !important;
-  background-color: hsl(222.2 84% 6.9%) !important;
-}
-
-/* Improve card contrast */
-.dark .card {
-  background-color: hsl(222.2 84% 8.9%) !important;
-  border-color: hsl(217.2 32.6% 25.5%) !important;
-}
-
-/* Improve chart background */
-.dark .recharts-surface {
-  background-color: hsl(222.2 84% 8.9% / 0.7) !important;
-}
-
-.dark .recharts-default-tooltip {
-  background-color: hsl(222.2 84% 10.9% / 0.9) !important;
-  border-color: hsl(217.2 32.6% 30.5%) !important;
-  color: hsl(210 40% 98%) !important;
-}
-
-/* Improve button contrast */
-.dark .btn-secondary {
-  background-color: hsl(217.2 32.6% 25.5%) !important;
-  color: hsl(210 40% 98%) !important;
-}
-
-/* Improve input contrast */
-.dark input,
-.dark select,
-.dark textarea {
-  background-color: hsl(222.2 84% 8.9%) !important;
-  border-color: hsl(217.2 32.6% 30.5%) !important;
-  color: hsl(210 40% 98%) !important;
-}
-
-/* Improve tab contrast */
-.dark [role="tab"] {
-  color: hsl(215 20.2% 75.1%) !important;
-}
-
-.dark [role="tab"][data-state="active"] {
-  color: hsl(210 40% 98%) !important;
-  border-color: hsl(210 40% 98%) !important;
+::-webkit-scrollbar-thumb:hover {
+  background: #2E3A54;
 }

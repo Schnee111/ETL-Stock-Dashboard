@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   ComposedChart,
+  Area,
   Line,
   Bar,
   XAxis,
@@ -10,9 +11,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts"
-import { Card } from "@/components/ui/card"
 
 interface PriceData {
   Symbol: string
@@ -28,80 +27,81 @@ interface PriceChartProps {
   data: PriceData[]
 }
 
-// Update the CustomTooltip component for better dark mode visibility
-const CustomTooltip = ({ active, payload, label }: any) => {
+const TerminalTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
+    const isUp = (data.Close ?? 0) >= (data.Open ?? 0)
+    const diff = (data.Close ?? 0) - (data.Open ?? 0)
+    const diffPct = data.Open ? (diff / data.Open) * 100 : 0
+
     return (
-      <Card className="bg-card dark:bg-card p-4 shadow-lg border border-border dark:border-border">
-        <p className="font-bold text-foreground dark:text-foreground">{data.Symbol}</p>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground">Tanggal: {data.Date}</p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
-          <p className="text-sm">
-            <span className="text-muted-foreground dark:text-muted-foreground">Open:</span>{" "}
-            <span className="font-medium text-foreground dark:text-foreground">
-              Rp {data.Open.toLocaleString("id-ID")}
-            </span>
-          </p>
-          <p className="text-sm">
-            <span className="text-muted-foreground dark:text-muted-foreground">Close:</span>{" "}
-            <span className="font-medium text-foreground dark:text-foreground">
-              Rp {data.Close.toLocaleString("id-ID")}
-            </span>
-          </p>
-          <p className="text-sm">
-            <span className="text-muted-foreground dark:text-muted-foreground">High:</span>{" "}
-            <span className="font-medium text-green-600 dark:text-green-400">
-              Rp {data.High.toLocaleString("id-ID")}
-            </span>
-          </p>
-          <p className="text-sm">
-            <span className="text-muted-foreground dark:text-muted-foreground">Low:</span>{" "}
-            <span className="font-medium text-red-600 dark:text-red-400">Rp {data.Low.toLocaleString("id-ID")}</span>
-          </p>
-        </div>
-        <p className="text-sm mt-1">
-          <span className="text-muted-foreground dark:text-muted-foreground">Volume:</span>{" "}
-          <span className="font-medium text-foreground dark:text-foreground">
-            {data.Volume.toLocaleString("id-ID")}
+      <div className="bg-[#0F121A] p-3 border border-[#2E3A54] rounded shadow-2xl font-mono text-xs text-[#E2E8F0] min-w-[210px]">
+        <div className="flex items-center justify-between border-b border-[#1E2638] pb-1.5 mb-2">
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-[#10B981]">{data.Symbol}</span>
+            <span className="text-[10px] text-[#64748B]">{data.Date}</span>
+          </div>
+          <span
+            className={`text-[10px] px-1 py-0.5 rounded font-mono ${
+              isUp
+                ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30"
+                : "bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30"
+            }`}
+          >
+            {diff >= 0 ? "+" : ""}
+            {diffPct.toFixed(2)}%
           </span>
-        </p>
-      </Card>
+        </div>
+
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] tabular-nums">
+          <div className="flex justify-between text-[#94A3B8]">
+            <span>OPEN</span>
+            <span className="text-white font-medium">Rp {Number(data.Open).toLocaleString("id-ID")}</span>
+          </div>
+          <div className="flex justify-between text-[#94A3B8]">
+            <span>HIGH</span>
+            <span className="text-[#10B981] font-medium">Rp {Number(data.High).toLocaleString("id-ID")}</span>
+          </div>
+          <div className="flex justify-between text-[#94A3B8]">
+            <span>LOW</span>
+            <span className="text-[#EF4444] font-medium">Rp {Number(data.Low).toLocaleString("id-ID")}</span>
+          </div>
+          <div className="flex justify-between text-[#94A3B8]">
+            <span>CLOSE</span>
+            <span className="text-white font-bold">Rp {Number(data.Close).toLocaleString("id-ID")}</span>
+          </div>
+        </div>
+
+        <div className="mt-2 pt-1.5 border-t border-[#1E2638] flex justify-between items-center text-[10px] text-[#64748B]">
+          <span>VOL</span>
+          <span className="font-mono tabular-nums text-[#94A3B8]">
+            {Number(data.Volume).toLocaleString("id-ID")}
+          </span>
+        </div>
+      </div>
     )
   }
   return null
 }
 
 export default function StockChart({ data }: PriceChartProps) {
-  const [activeDataKey, setActiveDataKey] = useState<string>("Close")
+  const [activeMetric, setActiveMetric] = useState<"Close" | "Open" | "High" | "Low">("Close")
   const [selectedRange, setSelectedRange] = useState<string>("all")
+  const [chartType, setChartType] = useState<"area" | "line">("area")
 
   // Ensure dates are sorted chronologically
-  const sortedData = [...data].sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime())
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime())
+  }, [data])
 
   // Filter data based on selected range
-  const formattedData = filterByRange(sortedData, selectedRange)
+  const formattedData = useMemo(() => {
+    if (!sortedData.length || selectedRange === "all") return sortedData
 
-  // Calculate min and max values for Y axis with some padding
-  const allValues = formattedData.flatMap((item) => [item.Open, item.High, item.Low, item.Close])
-  const minValue = allValues.length > 0 ? Math.min(...allValues) * 0.95 : 0
-  const maxValue = allValues.length > 0 ? Math.max(...allValues) * 1.05 : 100
-  const maxVolume = formattedData.length > 0 ? Math.max(...formattedData.map((item) => item.Volume)) * 1.1 : 1000000
-
-  // Debug: Log data to check volume
-  console.log("Formatted Data:", formattedData)
-
-  const handleLegendClick = (dataKey: string) => {
-    setActiveDataKey(dataKey)
-  }
-
-  function filterByRange(data: PriceData[], range: string): PriceData[] {
-    if (!data.length || range === "all") return data
-
-    const endDate = new Date(data[data.length - 1].Date)
+    const endDate = new Date(sortedData[sortedData.length - 1].Date)
     const startDate = new Date(endDate)
 
-    switch (range) {
+    switch (selectedRange) {
       case "5d":
         startDate.setDate(endDate.getDate() - 5)
         break
@@ -119,312 +119,239 @@ export default function StockChart({ data }: PriceChartProps) {
         break
     }
 
-    return data.filter((item) => new Date(item.Date) >= startDate)
-  }
+    return sortedData.filter((item) => new Date(item.Date) >= startDate)
+  }, [sortedData, selectedRange])
 
-  function rangeBtnClass(active: boolean) {
-    return `px-2 py-1 rounded-full text-sm ${
-      active
-        ? "bg-primary/10 text-primary dark:bg-secondary/70 dark:text-primary-foreground font-semibold"
-        : "bg-background text-muted-foreground hover:bg-primary/10 hover:text-primary dark:bg-card dark:text-muted-foreground dark:hover:bg-secondary/70 dark:hover:text-primary-foreground"
-    }`
-  }
-
-  function getCustomTicks() {
-    if (!formattedData.length) return []
-
-    if (selectedRange === "all") {
-      const years = new Set<number>()
-      const yearTicks: string[] = []
-
-      formattedData.forEach((item) => {
-        const year = new Date(item.Date).getFullYear()
-        years.add(year)
-      })
-
-      Array.from(years)
-        .sort()
-        .forEach((year) => {
-          const firstDateInYear = formattedData.find((item) => new Date(item.Date).getFullYear() === year)
-          if (firstDateInYear) {
-            yearTicks.push(firstDateInYear.Date)
-          }
-        })
-
-      return yearTicks
+  // Min and max bounds
+  const { minValue, maxValue, maxVolume } = useMemo(() => {
+    if (!formattedData.length) {
+      return { minValue: 0, maxValue: 100, maxVolume: 1000 }
     }
-
-    if (selectedRange === "3y") {
-      const quarterTicks: string[] = []
-      const targetMonths = [0, 3, 6, 9] // Jan, Apr, Jul, Oct (0-based)
-      const years = new Set<number>()
-
-      formattedData.forEach((item) => {
-        const year = new Date(item.Date).getFullYear()
-        years.add(year)
-      })
-
-      Array.from(years)
-        .sort()
-        .forEach((year) => {
-          targetMonths.forEach((month) => {
-            const targetDate = new Date(year, month, 1)
-
-            let closestItem = formattedData[0]
-            let closestDiff = Number.POSITIVE_INFINITY
-
-            formattedData.forEach((item) => {
-              const itemDate = new Date(item.Date)
-              if (itemDate.getFullYear() === year) {
-                const diff = Math.abs(itemDate.getTime() - targetDate.getTime())
-                if (diff < closestDiff) {
-                  closestDiff = diff
-                  closestItem = item
-                }
-              }
-            })
-
-            const itemDate = new Date(closestItem.Date)
-            const diff = Math.abs(itemDate.getTime() - targetDate.getTime())
-            if (diff < 45 * 24 * 60 * 60 * 1000) {
-              quarterTicks.push(closestItem.Date)
-            }
-          })
-        })
-
-      return quarterTicks
+    const vals = formattedData.map((d) => d[activeMetric] || d.Close)
+    const min = Math.min(...vals)
+    const max = Math.max(...vals)
+    const pad = (max - min) * 0.08 || min * 0.05
+    const vols = formattedData.map((d) => d.Volume || 0)
+    return {
+      minValue: Math.max(0, Math.floor(min - pad)),
+      maxValue: Math.ceil(max + pad),
+      maxVolume: Math.max(...vols) * 4, // 4x factor keeps volume bars in bottom quarter
     }
+  }, [formattedData, activeMetric])
 
-    if (selectedRange === "6mo" || selectedRange === "1y") {
-      const monthTicks: string[] = []
-      let currentMonth = -1
-      let currentYear = -1
+  const ranges = [
+    { label: "5D", value: "5d" },
+    { label: "1M", value: "1mo" },
+    { label: "6M", value: "6mo" },
+    { label: "1Y", value: "1y" },
+    { label: "3Y", value: "3y" },
+    { label: "ALL", value: "all" },
+  ]
 
-      formattedData.forEach((item) => {
-        const date = new Date(item.Date)
-        const month = date.getMonth()
-        const year = date.getFullYear()
-
-        if (month !== currentMonth || year !== currentYear) {
-          monthTicks.push(item.Date)
-          currentMonth = month
-          currentYear = year
-        }
-      })
-
-      return monthTicks
-    }
-
-    return formattedData.map((item) => item.Date)
-  }
-
-  const customTicks = getCustomTicks()
+  const metrics: Array<{ key: "Close" | "Open" | "High" | "Low"; label: string; color: string }> = [
+    { key: "Close", label: "CLOSE", color: "#10B981" },
+    { key: "Open", label: "OPEN", color: "#06B6D4" },
+    { key: "High", label: "HIGH", color: "#3B82F6" },
+    { key: "Low", label: "LOW", color: "#EF4444" },
+  ]
 
   return (
-    <div className="h-full w-full">
-      <div className="flex flex-col gap-3 mb-4 ml-4">
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setSelectedRange("5d")} className={rangeBtnClass(selectedRange === "5d")}>
-            5 Hari
-          </button>
-          <button onClick={() => setSelectedRange("1mo")} className={rangeBtnClass(selectedRange === "1mo")}>
-            1 Bulan
-          </button>
-          <button onClick={() => setSelectedRange("6mo")} className={rangeBtnClass(selectedRange === "6mo")}>
-            6 Bulan
-          </button>
-          <button onClick={() => setSelectedRange("1y")} className={rangeBtnClass(selectedRange === "1y")}>
-            1 Tahun
-          </button>
-          <button onClick={() => setSelectedRange("3y")} className={rangeBtnClass(selectedRange === "3y")}>
-            3 Tahun
-          </button>
-          <button onClick={() => setSelectedRange("all")} className={rangeBtnClass(selectedRange === "all")}>
-            Semua
-          </button>
+    <div className="w-full flex flex-col">
+      {/* Top Chart Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-2 border-b border-[#1E2638]">
+        {/* Metric Toggles */}
+        <div className="flex items-center gap-1 bg-[#090A0F] p-0.5 rounded border border-[#1E2638]">
+          {metrics.map((m) => {
+            const active = activeMetric === m.key
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => setActiveMetric(m.key)}
+                className={`px-2 py-0.5 text-[11px] font-mono tracking-wider rounded transition-colors ${
+                  active
+                    ? "bg-[#161B26] text-white font-semibold border border-[#2E3A54] shadow-sm"
+                    : "text-[#64748B] hover:text-[#94A3B8]"
+                }`}
+              >
+                {m.label}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Chart Style Switcher */}
+          <div className="flex items-center bg-[#090A0F] p-0.5 rounded border border-[#1E2638]">
+            <button
+              type="button"
+              onClick={() => setChartType("area")}
+              className={`px-2 py-0.5 text-[11px] font-mono rounded ${
+                chartType === "area"
+                  ? "bg-[#161B26] text-[#10B981] font-semibold border border-[#1E2638]"
+                  : "text-[#64748B] hover:text-[#94A3B8]"
+              }`}
+            >
+              AREA
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartType("line")}
+              className={`px-2 py-0.5 text-[11px] font-mono rounded ${
+                chartType === "line"
+                  ? "bg-[#161B26] text-[#10B981] font-semibold border border-[#1E2638]"
+                  : "text-[#64748B] hover:text-[#94A3B8]"
+              }`}
+            >
+              LINE
+            </button>
+          </div>
+
+          {/* Timeframe selector */}
+          <div className="flex items-center gap-0.5 bg-[#090A0F] p-0.5 rounded border border-[#1E2638]">
+            {ranges.map((range) => {
+              const active = selectedRange === range.value
+              return (
+                <button
+                  key={range.value}
+                  type="button"
+                  onClick={() => setSelectedRange(range.value)}
+                  className={`px-2 py-0.5 text-[11px] font-mono rounded transition-colors ${
+                    active
+                      ? "bg-[#10B981] text-[#090A0F] font-bold"
+                      : "text-[#64748B] hover:text-[#E2E8F0]"
+                  }`}
+                >
+                  {range.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
-      <div className="flex gap-4 flex-wrap mb-4 ml-4">
-        <button
-          onClick={() => handleLegendClick("Open")}
-          className={`px-3 py-1 rounded-full text-sm ${
-            activeDataKey === "Open"
-              ? "bg-blue-200 text-blue-700 font-medium"
-              : "bg-background text-muted-foreground hover:bg-blue-200 hover:text-blue-700 dark:bg-card dark:text-muted-foreground dark:hover:bg-blue-200 dark:hover:text-blue-700"
-          }`}
-        >
-          Open
-        </button>
-        <button
-          onClick={() => handleLegendClick("Close")}
-          className={`px-3 py-1 rounded-full text-sm ${
-            activeDataKey === "Close"
-              ? "bg-purple-200 text-purple-700 font-medium"
-              : "bg-background text-muted-foreground hover:bg-purple-200 hover:text-purple-700 dark:bg-card dark:text-muted-foreground dark:hover:bg-purple-200 dark:hover:text-purple-700"
-          }`}
-        >
-          Close
-        </button>
-        <button
-          onClick={() => handleLegendClick("High")}
-          className={`px-3 py-1 rounded-full text-sm ${
-            activeDataKey === "High"
-              ? "bg-green-200 text-green-700 font-medium"
-              : "bg-background text-muted-foreground hover:bg-green-200 hover:text-green-700 dark:bg-card dark:text-muted-foreground dark:hover:bg-green-200 dark:hover:text-green-700"
-          }`}
-        >
-          High
-        </button>
-        <button
-          onClick={() => handleLegendClick("Low")}
-          className={`px-3 py-1 rounded-full text-sm ${
-            activeDataKey === "Low"
-              ? "bg-red-200 text-red-700 font-medium"
-              : "bg-background text-muted-foreground hover:bg-red-200 hover:text-red-700 dark:bg-card dark:text-muted-foreground dark:hover:bg-red-200 dark:hover:text-red-700"
-          }`}
-        >
-          Low
-        </button>
-      </div>
 
-      <div className="h-[400px]">
+      {/* Main Chart Canvas */}
+      <div className="h-[360px] w-full relative">
         {formattedData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={formattedData}
-              margin={{
-                top: 5,
-                right: 0,
-                left: 0,
-                bottom: 5,
-              }}
+              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <defs>
+                <linearGradient id="terminalEmeraldGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10B981" stopOpacity={0.25} />
+                  <stop offset="90%" stopColor="#10B981" stopOpacity={0.0} />
+                </linearGradient>
+                <linearGradient id="terminalCyanGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#06B6D4" stopOpacity={0.25} />
+                  <stop offset="90%" stopColor="#06B6D4" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid
+                strokeDasharray="2 3"
+                stroke="#1E2638"
+                vertical={false}
+              />
+
               <XAxis
                 dataKey="Date"
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value: string) => {
-                  const date = new Date(value)
-                  const year = date.getFullYear()
-                  const month = date.getMonth()
-                  const day = date.getDate()
-                  const monthNames = [
-                    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
-                  ]
+                stroke="#475569"
+                tick={{ fontSize: 10, fill: "#64748B", fontFamily: "monospace" }}
+                tickFormatter={(val: string) => {
+                  if (!val) return ""
+                  const d = new Date(val)
+                  if (isNaN(d.getTime())) return val
+                  if (selectedRange === "5d") return `${d.getDate()}/${d.getMonth() + 1}`
+                  if (selectedRange === "1mo" || selectedRange === "6mo")
+                    return `${d.getDate()} ${d.toLocaleString("en", { month: "short" })}`
+                  if (selectedRange === "1y")
+                    return `${d.toLocaleString("en", { month: "short" })} '${d.getFullYear().toString().slice(-2)}`
+                  return `${d.getFullYear()}`
+                }}
+                minTickGap={45}
+                axisLine={{ stroke: "#1E2638" }}
+                tickLine={false}
+              />
 
-                  if (selectedRange === "all") {
-                    return `${year}`
-                  }
-                  if (selectedRange === "3y") {
-                    return `${monthNames[month]}/${year}`
-                  }
-                  if (selectedRange === "1y" || selectedRange === "6mo") {
-                    return `${monthNames[month]}/${year}`
-                  }
-                  return `${day}/${monthNames[month]}/${year.toString().slice(-2)}`
-                }}
-                ticks={customTicks}
-                axisLine={{ stroke: "#e0e0e0" }}
-                padding={{ left: 10, right: 10 }}
-                height={50}
-                angle={selectedRange === "5d" || selectedRange === "1mo" ? -45 : 0}
-                textAnchor={selectedRange === "5d" || selectedRange === "1mo" ? "end" : "middle"}
-              />
               <YAxis
-                yAxisId="left"
+                yAxisId="price"
                 domain={[minValue, maxValue]}
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => `${Math.round(value).toLocaleString("id-ID")}`}
-                orientation="left"
-                width={60}
-                stroke="#666"
-                label={{ value: "Harga (Rp)", angle: -90, position: "insideLeft", offset: 10, fill: "#666" }}
-              />
-              <YAxis
-                yAxisId="right"
-                domain={[0, maxVolume]}
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => `${Math.round(value / 1000000).toLocaleString("id-ID")}M`}
+                stroke="#475569"
                 orientation="right"
-                width={60}
-                stroke="#666"
-                label={{ value: "Volume", angle: 90, position: "insideRight", offset: 10, fill: "#666" }}
+                tick={{ fontSize: 10, fill: "#64748B", fontFamily: "monospace" }}
+                tickFormatter={(val) => Number(val).toLocaleString("id-ID")}
+                axisLine={false}
+                tickLine={false}
+                width={56}
               />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                iconSize={20}
-                wrapperStyle={{
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                  lineHeight: "24px",
-                  fontSize: "14px",
-                }}
+
+              <YAxis
+                yAxisId="volume"
+                domain={[0, maxVolume]}
+                orientation="left"
+                hide
               />
-              {activeDataKey === "Open" && (
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="Open"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 6 }}
-                  name="Open"
-                />
-              )}
-              {activeDataKey === "Close" && (
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="Close"
-                  stroke="#6366f1"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 6 }}
-                  name="Close"
-                />
-              )}
-              {activeDataKey === "High" && (
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="High"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 6 }}
-                  name="High"
-                />
-              )}
-              {activeDataKey === "Low" && (
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="Low"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 6 }}
-                  name="Low"
-                />
-              )}
+
+              <Tooltip
+                content={<TerminalTooltip />}
+                cursor={{ stroke: "#2E3A54", strokeWidth: 1, strokeDasharray: "3 3" }}
+              />
+
+              {/* Underlying Volume Bars in bottom section */}
               <Bar
-                yAxisId="right"
+                yAxisId="volume"
                 dataKey="Volume"
-                fill="#6ee7b7"
-                barSize={200}
-                name="Volume"
-                opacity={0.3}
+                fill="#1E2638"
+                opacity={0.65}
+                maxBarSize={8}
+                isAnimationActive={false}
               />
+
+              {/* Price Line / Area */}
+              {chartType === "area" ? (
+                <Area
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey={activeMetric}
+                  stroke="#10B981"
+                  strokeWidth={1.75}
+                  fill="url(#terminalEmeraldGradient)"
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#10B981", stroke: "#090A0F", strokeWidth: 2 }}
+                />
+              ) : (
+                <Line
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey={activeMetric}
+                  stroke="#10B981"
+                  strokeWidth={1.75}
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#10B981", stroke: "#090A0F", strokeWidth: 2 }}
+                />
+              )}
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-full flex items-center justify-center text-muted-foreground">
-            Tidak ada data untuk ditampilkan
+          <div className="flex h-full items-center justify-center font-mono text-xs text-[#64748B]">
+            DATA FEED EMPTY / CONNECTING
           </div>
         )}
+      </div>
+
+      {/* Monospace Sub-strip Footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-[#1E2638] text-[10px] font-mono text-[#64748B] tabular-nums">
+        <div className="flex items-center gap-3">
+          <span>HIGH 52W: <strong className="text-[#94A3B8]">Rp {maxValue.toLocaleString("id-ID")}</strong></span>
+          <span>LOW 52W: <strong className="text-[#94A3B8]">Rp {minValue.toLocaleString("id-ID")}</strong></span>
+          <span>VOL (AVG): <strong className="text-[#94A3B8]">{(maxVolume / 4).toLocaleString("id-ID")}</strong></span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[#10B981]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
+          <span>REALTIME FEED</span>
+        </div>
       </div>
     </div>
   )

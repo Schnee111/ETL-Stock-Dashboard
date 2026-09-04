@@ -1,17 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Check, ChevronsUpDown, Plus, X } from "lucide-react"
+import { Check, ChevronsUpDown, Plus, X, BarChart2 } from "lucide-react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
-// Interface untuk tipe data dari API
 interface Emiten {
   ticker: string
   name: string
@@ -27,21 +24,18 @@ interface PriceData {
   Volume: number
 }
 
-// Fungsi untuk fetch data emiten
 async function fetchEmiten(): Promise<Emiten[]> {
   try {
     const apiUrl = "http://localhost:5000/api/emiten"
     const res = await fetch(apiUrl, { cache: "no-store" })
-    if (!res.ok) throw new Error(`Failed to fetch emiten: ${res.status} ${res.statusText}`)
+    if (!res.ok) throw new Error(`Failed to fetch emiten: ${res.status}`)
     const tickers: string[] = await res.json()
     return tickers.map((ticker) => ({ ticker, name: ticker.split(".")[0] }))
   } catch (error) {
-    console.error("Error fetching emitens:", error)
     return [{ ticker: "BBRI.JK", name: "BBRI" }]
   }
 }
 
-// Fungsi untuk fetch data harga
 async function fetchPriceData(emiten: string, period: string): Promise<PriceData[]> {
   try {
     const apiUrl = `http://localhost:5000/api/harga?emiten=${emiten}&period=${period}`
@@ -49,22 +43,25 @@ async function fetchPriceData(emiten: string, period: string): Promise<PriceData
     if (!res.ok) throw new Error("Failed to fetch price data")
     return await res.json()
   } catch (error) {
-    console.error(error)
     return []
   }
 }
 
-const CustomTooltip = ({ active, payload, label, selectedStocks }: any) => {
+const STOCK_COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#EC4899", "#8B5CF6"]
+
+const ComparisonTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card dark:bg-card p-2 border border-border dark:border-border rounded shadow-lg">
-        <p className="text-xs text-muted-foreground dark:text-muted-foreground">Tanggal: {label}</p>
+      <div className="bg-[#0F121A] p-2.5 border border-[#2E3A54] rounded shadow-xl font-mono text-xs min-w-[160px]">
+        <div className="text-[10px] text-[#64748B] border-b border-[#1E2638] pb-1 mb-1.5 font-mono">
+          DATE: {label}
+        </div>
         {payload.map((entry: any, index: number) => (
-          <div key={index}>
-            <p className="font-bold text-xs text-foreground dark:text-foreground">{entry.name}</p>
-            <p className="text-xs text-muted-foreground dark:text-muted-foreground">
-              Harga: <span className="font-medium text-foreground dark:text-foreground">Rp {entry.value.toLocaleString("id-ID")}</span>
-            </p>
+          <div key={index} className="flex justify-between items-center py-0.5">
+            <span className="font-bold text-[11px]" style={{ color: entry.stroke }}>
+              {entry.name}
+            </span>
+            <span className="tabular-nums text-white">Rp {Number(entry.value).toLocaleString("id-ID")}</span>
           </div>
         ))}
       </div>
@@ -74,12 +71,11 @@ const CustomTooltip = ({ active, payload, label, selectedStocks }: any) => {
 }
 
 export default function StockComparison() {
-  const [selectedStocks, setSelectedStocks] = useState<string[]>(["AGRO.JK", "ADES.JK"])
+  const [selectedStocks, setSelectedStocks] = useState<string[]>(["BBRI.JK", "BBCA.JK"])
   const [open, setOpen] = useState(false)
   const [priceData, setPriceData] = useState<{ [key: string]: PriceData[] }>({})
   const [emitens, setEmitens] = useState<Emiten[]>([])
 
-  // Fetch daftar emiten saat komponen dimuat
   useEffect(() => {
     async function loadEmitens() {
       const fetchedEmitens = await fetchEmiten()
@@ -88,7 +84,6 @@ export default function StockComparison() {
     loadEmitens()
   }, [])
 
-  // Fetch data harga untuk selected stocks
   useEffect(() => {
     async function fetchAllPriceData() {
       const data: { [key: string]: PriceData[] } = {}
@@ -111,203 +106,148 @@ export default function StockComparison() {
   }
 
   const handleRemoveStock = (value: string) => {
-    setSelectedStocks(selectedStocks.filter((stock) => stock !== value))
+    if (selectedStocks.length > 1) {
+      setSelectedStocks(selectedStocks.filter((stock) => stock !== value))
+    }
   }
 
-  // Prepare chart data with original prices
-  const chartData = selectedStocks.reduce(
-    (acc, stock) => {
-      const stockData = priceData[stock] || []
-      stockData.forEach((item) => {
-        const existing = acc.find((d) => d.Date === item.Date)
-        if (existing) {
-          existing[stock] = item.Close
-        } else {
-          acc.push({ Date: item.Date, [stock]: item.Close })
-        }
-      })
-      return acc
-    },
-    [] as { Date: string; [key: string]: number | string }[],
-  )
+  // Normalize/merge series by Date
+  const allDates = Array.from(
+    new Set(
+      Object.values(priceData)
+        .flat()
+        .map((p) => p.Date)
+    )
+  ).sort()
+
+  const chartData = allDates.map((date) => {
+    const row: any = { Date: date }
+    selectedStocks.forEach((ticker) => {
+      const point = priceData[ticker]?.find((p) => p.Date === date)
+      if (point) {
+        row[ticker] = point.Close
+      }
+    })
+    return row
+  })
 
   return (
-    <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-secondary/20 dark:border-border card-hover">
-      <CardHeader>
-        <CardTitle className="text-lg">Perbandingan Saham</CardTitle>
-        <CardDescription className="text-xs">Bandingkan performa relatif beberapa saham</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {selectedStocks.map((stock) => (
-            <Badge
-              key={stock}
-              className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border-primary/30 flex items-center gap-1 py-1 text-xs"
-            >
-              {stock}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-4 w-4 rounded-full p-0 ml-1 hover:bg-red-500/10 hover:text-red-500"
-                onClick={() => handleRemoveStock(stock)}
+    <div className="bg-[#0F121A] border border-[#1E2638] rounded p-4 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1E2638] pb-3">
+        <div className="flex items-center gap-2">
+          <BarChart2 className="h-4 w-4 text-[#10B981]" />
+          <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">
+            MULTI-EMITEN PRICE CORRELATION
+          </h3>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
+            {selectedStocks.map((ticker, index) => (
+              <span
+                key={ticker}
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono border"
+                style={{
+                  backgroundColor: `${STOCK_COLORS[index % STOCK_COLORS.length]}15`,
+                  borderColor: `${STOCK_COLORS[index % STOCK_COLORS.length]}40`,
+                  color: STOCK_COLORS[index % STOCK_COLORS.length],
+                }}
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          ))}
-          {selectedStocks.length < 5 && (
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="border-dashed border-secondary/50 dark:border-border/50 hover:bg-accent/10 hover:text-accent h-8 text-xs"
+                {ticker}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveStock(ticker)}
+                  className="hover:opacity-75 focus:outline-none"
                 >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Tambah Saham
-                  <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
-                <Command>
-                  <CommandInput placeholder="Cari saham..." className="text-xs" />
-                  <CommandList>
-                    <CommandEmpty className="text-xs">Saham tidak ditemukan.</CommandEmpty>
-                    <CommandGroup>
-                      {emitens.map((emiten) => (
-                        <CommandItem
-                          key={emiten.ticker}
-                          value={emiten.ticker}
-                          onSelect={() => handleAddStock(emiten.ticker)}
-                          disabled={selectedStocks.includes(emiten.ticker)}
-                          className="text-xs"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-3 w-3",
-                              selectedStocks.includes(emiten.ticker) ? "opacity-100" : "opacity-0",
-                            )}
-                          />
-                          {emiten.ticker} - {emiten.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          )}
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs font-mono bg-[#090A0F] border-[#1E2638] text-[#E2E8F0] hover:bg-[#161B26]"
+              >
+                <Plus className="h-3 w-3 mr-1 text-[#10B981]" />
+                ADD SYMBOL
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-52 bg-[#0F121A] border-[#1E2638] text-[#E2E8F0]">
+              <Command className="bg-transparent">
+                <CommandInput placeholder="Search ticker..." className="h-8 text-xs font-mono" />
+                <CommandList className="max-h-48 text-xs font-mono">
+                  <CommandEmpty>No symbols found.</CommandEmpty>
+                  <CommandGroup>
+                    {emitens.map((emiten) => (
+                      <CommandItem
+                        key={emiten.ticker}
+                        onSelect={() => handleAddStock(emiten.ticker)}
+                        className="hover:bg-[#161B26] cursor-pointer"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-3.5 w-3.5 text-[#10B981]",
+                            selectedStocks.includes(emiten.ticker) ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {emiten.ticker}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
+      </div>
 
-        <Separator className="my-4 bg-secondary/30 dark:bg-border" />
-
-        <div className="h-[400px] w-full">
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={document.documentElement.classList.contains("dark") ? "#334155" : "#f0f0f0"}
+      <div className="h-[380px] w-full">
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="2 3" stroke="#1E2638" vertical={false} />
+              <XAxis
+                dataKey="Date"
+                stroke="#475569"
+                tick={{ fontSize: 10, fill: "#64748B", fontFamily: "monospace" }}
+                minTickGap={45}
+                axisLine={{ stroke: "#1E2638" }}
+                tickLine={false}
+              />
+              <YAxis
+                stroke="#475569"
+                orientation="right"
+                tick={{ fontSize: 10, fill: "#64748B", fontFamily: "monospace" }}
+                tickFormatter={(val) => Number(val).toLocaleString("id-ID")}
+                axisLine={false}
+                tickLine={false}
+                width={56}
+              />
+              <Tooltip content={<ComparisonTooltip />} />
+              {selectedStocks.map((ticker, index) => (
+                <Line
+                  key={ticker}
+                  type="monotone"
+                  dataKey={ticker}
+                  name={ticker}
+                  stroke={STOCK_COLORS[index % STOCK_COLORS.length]}
+                  strokeWidth={1.8}
+                  dot={false}
+                  activeDot={{ r: 4, stroke: "#090A0F", strokeWidth: 2 }}
                 />
-                <XAxis
-                  dataKey="Date"
-                  tick={{
-                    fontSize: 10,
-                    fill: document.documentElement.classList.contains("dark") ? "#cbd5e1" : "#64748b",
-                  }}
-                  tickFormatter={(value: string) => {
-                    const date = new Date(value)
-                    return date.toLocaleDateString("id-ID", { month: "short", year: "numeric" })
-                  }}
-                />
-                <YAxis
-                  tick={{
-                    fontSize: 10,
-                    fill: document.documentElement.classList.contains("dark") ? "#cbd5e1" : "#64748b",
-                  }}
-                  tickFormatter={(value) => {
-                    // Default to the first stock for percentage calculation
-                    return `Rp ${Math.round(value).toLocaleString("id-ID")}`
-                  }}
-                />
-                <Tooltip content={<CustomTooltip selectedStocks={selectedStocks} />} />
-                <Legend
-                  wrapperStyle={{
-                    fontSize: "12px",
-                    color: document.documentElement.classList.contains("dark") ? "#cbd5e1" : "#64748b",
-                  }}
-                />
-                {selectedStocks.map((stock, index) => (
-                  <Line
-                    key={stock}
-                    type="monotone"
-                    dataKey={stock}
-                    stroke={["#60a5fa", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899"][index % 5]}
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 6 }}
-                    name={stock}
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-              Tidak ada data untuk ditampilkan
-            </div>
-          )}
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {selectedStocks.map((stock) => {
-            const emiten = emitens.find((e) => e.ticker === stock)
-            const data = priceData[stock] || []
-            let latestPrice = 0
-            let initialPrice = 0
-            let performance = 0
-
-            if (data.length > 0) {
-              // Find the latest price (most recent date)
-              latestPrice = data[data.length - 1].Close
-
-              // Find the initial price from 1 year ago (approximate)
-              const oneYearAgo = new Date()
-              oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1) // May 11, 2024
-              const initialData = data
-                .filter((item) => new Date(item.Date) <= oneYearAgo)
-                .sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime())[0] // Closest to 1 year ago
-              initialPrice = initialData ? initialData.Close : latestPrice // Fallback to latest if no earlier data
-
-              // Calculate performance as percentage change
-              performance = initialPrice !== 0 ? ((latestPrice - initialPrice) / initialPrice) * 100 : 0
-            }
-
-            return (
-              <div key={stock} className="bg-secondary/20 dark:bg-muted/50 p-2 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1">
-                    <Badge className="bg-primary text-white dark:bg-primary/80 dark:text-primary-foreground text-xs">
-                      {stock}
-                    </Badge>
-                    <span className="text-xs font-medium text-foreground dark:text-foreground">
-                      {emiten?.name || stock}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground dark:text-muted-foreground">
-                  Performa 1 Tahun:{" "}
-                  <span
-                    className={`font-medium ${performance >= 0 ? "text-accent dark:text-accent" : "text-red-500 dark:text-red-400"}`}
-                  >
-                    {performance.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full flex items-center justify-center font-mono text-xs text-[#64748B]">
+            LOADING COMPARATIVE MATRIX...
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
