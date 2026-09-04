@@ -1,27 +1,36 @@
-# Visual & Architectural Specification: ETL Stock Terminal
+# Design System Specification — AETER Monitor Archetype & Clean Utilitarian Craft
+**Project**: ETL Stock & Financial Market Intelligence
+**Archetype**: `monitor.aeter.my.id` + `taste-minimalist` + `impeccable` + `frontend-ui-engineering`
+**Audience**: Equity Analysts, Portfolio Managers, Data Engineers
 
-## 1. Objective & Design Philosophy
-Transform generic v0 shadcn/ui stock dashboard into a high-density, professional Financial Market Terminal (Bloomberg / Koyfin / TradingView inspired).
+---
 
-## 2. Design Tokens & Palette
-- Background: Void Obsidian `#090A0F`, Card Deep Slate `#0F121A`, Elevated Card `#161B26`
-- Borders: Subtle hairline `#1E2638` (hover: `#2E3A54`)
-- Accent Profit/Up: Clean Emerald `#10B981` / `#059669` (dark/light contrast)
-- Accent Loss/Down: Crisp Crimson `#EF4444` / `#DC2626`
-- Typography:
-  - Sans: Inter / Geist Sans for labels
-  - Tabular Numbers: `font-mono tabular-nums` (SF Mono, Roboto Mono, JetBrains Mono) for all currency, percentages, volume, and prices.
-- Aesthetics: High data density, micro-badges, clean candlestick/volume bar charts, seamless real-time ticker bar.
+## 1. Design Philosophy
+- **Authentic Materiality**: Premium frosted glass substrate, hairline borders, quiet layout without visual clutter.
+- **Anti-Slop Zero Tolerance**:
+  - NO faux-cyber terminal costumes (`v2.4-PRO`, `AIRFLOW: NOMINAL`, fake ping).
+  - NO marquee ticker tapes that flicker and strain the eyes.
+  - NO heavy opaque black boxes with aggressive borders.
+- **Precision & Scannability**: Strict tabular alignment, consistent spatial scale, clear typographic hierarchy.
 
-## 3. Scope of Changes
-- `app/globals.css`: Dark terminal theme default, tabular-nums utility, hairline border classes.
-- `app/layout.tsx`: Dark mode lock/preferred, clean terminal topbar header with market status ping.
-- `app/page.tsx`: Re-architect layout into multi-panel terminal:
-  - Live Ticker Tape banner
-  - Top Metrics strip (IHSG, Top Gainer, Top Loser, Total Volume)
-  - Main Chart panel with timeframe selector (1D, 1W, 1M, 1Y, ALL) and clean chart controls
-  - Order Book / Market Depth or Emiten Financial Summary side-by-side
-  - News stream in compact terminal wire format
-- `components/stock-chart.tsx`: Modernize Recharts into sleek dark theme with gradient fills, crosshair tooltips, volume bars, and tabular price overlays.
-- `components/stock-ticker.tsx`: Seamless scrolling live ticker with green/red pill badges.
-- `components/market-overview.tsx` & `components/financial-chart.tsx`: Tighten visual hierarchy, remove clunky shadows, add micro sparklines.
+## 2. Typography
+- **Display & Headlines**: `Plus Jakarta Sans`, sans-serif (`-0.02em` letter spacing).
+- **Financial Figures, Tickers & Ratios**: `JetBrains Mono`, monospace with `tabular-nums`.
+
+## 3. Color Tokens
+- **Canvas Substrate**: Deep muted obsidian slate with subtle ambient glow (`#0d0f14` / frosted backdrop).
+- **Cards & Panels**: Frosted obsidian glass (`rgba(22, 25, 33, 0.72)` with `backdrop-filter: blur(20px)` and border `1px solid rgba(255, 255, 255, 0.08)`).
+- **Ink**:
+  - Pure: `#f4f5f8`
+  - Secondary: `#9ca3af`
+  - Subtle: `#6b7280`
+- **Signals**:
+  - Gain / Inflow: `#10b981` (Emerald)
+  - Loss / Outflow: `#f43f5e` (Rose)
+  - Neutral / Volume: `#3b82f6` (Cobalt)
+
+## 4. Components Architecture
+1. **Header**: Minimalist Linear Breadcrumb Strip (`IDX / Market Intelligence · Equity Analytics & Financial Reports`), live indicator chip, ticker selector.
+2. **Key Financial Metrics**: Clean horizontal stat blocks with precise delta tags and subtle sparkline visual aids.
+3. **Interactive Stock Chart**: Clean dual-pane Recharts (Price Area Gradient on top, Volume Bars below) with high-legibility crosshair tooltip.
+4. **Statements & News**: Tabular statement viewer with year selection and high-density editorial financial news list.
